@@ -521,21 +521,49 @@ technical vocabulary, once all the analysis is complete.</p>
   a car buyer and a regulator should each take away from the result.</p>
 </div>"""
 
-ABOUT = """<h2>About Me</h2>
-<div class="callout">
-  <p><b>Placeholder &mdash; replace this with your own biography.</b> This is the one
-  tab where writing in the first person is allowed, so it should sound like you.</p>
-</div>
-<p>I am a graduate student in CSCI 5612, Machine Learning. This site is my
-semester project, in which I work through the full data science lifecycle on a
-single question: whether the crash-test scores used to sell vehicles say anything
-useful about the problems their owners actually experience.</p>
-<p>Add a few sentences here about your background, what drew you to this topic,
-and where you would like the work to go. A photograph and links to a
-r&eacute;sum&eacute; or professional profile also belong on this page.</p>
-<h3>Project repository</h3>
-<p>All code and data for this project are public at
-<a href="%s">%s</a>.</p>""" % (REPO, REPO)
+ABOUT = f"""<h2>About Me</h2>
+
+<p class="lede">I am a graduate student in <b>Data Science</b> with a background in
+<b>Electronics and Communication Engineering</b> and professional experience across
+software quality engineering and data engineering.</p>
+
+<p>From <b>2022 to 2025 I worked as a Software Quality Engineer at Pegasystems</b>,
+where I worked on enterprise software and developed experience with testing,
+automation, APIs, data, and large-scale business systems.</p>
+
+<p>During the summer of <b>2026 I worked as a Data Engineer intern at Denver
+International Airport</b>, where I worked with data and technology projects in an
+operational environment. This experience gave me an opportunity to apply my data
+and engineering skills to real-world airport systems.</p>
+
+<p>My current machine learning project brings together my technical background with
+my long-standing interest in automobiles and vehicle safety. I am investigating a
+simple but interesting question:</p>
+
+<blockquote>
+  <p>Do the crash-test scores used to sell vehicles tell us anything useful about
+  the problems their owners actually experience?</p>
+</blockquote>
+
+<p>Rather than treating this as simply a machine learning modelling exercise, I am
+working through the <b>full data science lifecycle</b> &mdash; from defining the
+question and preparing the data to exploratory analysis, feature engineering,
+modelling, evaluation, and communicating the results.</p>
+
+<p>My undergraduate background in electronics and communications initially sparked
+my interest in technology and real-world systems. My professional experience in
+software engineering and data engineering, combined with my graduate studies in
+Data Science, has given me a broader toolkit for investigating those systems
+through data.</p>
+
+<p>Outside of academics and work, I enjoy <b>automobiles, motorcycle riding, racing
+games, and listening to jazz</b>.</p>
+
+<h3>Elsewhere</h3>
+<ul>
+  <li><a href="https://www.linkedin.com/in/rajeshwar-rengeswaran/">Connect with me on LinkedIn</a></li>
+  <li>Project code and data: <a href="{REPO}">{REPO}</a></li>
+</ul>"""
 
 
 PAGES = {
