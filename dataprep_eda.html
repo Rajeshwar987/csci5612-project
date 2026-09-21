@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataPrep_EDA | Vehicle Safety Project</title>
+<meta name="description" content="Gathering, cleaning and exploring four federal vehicle safety datasets.">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <p class="course">CSCI 5612 &middot; Machine Learning &middot; Project</p>
+    <h1>Rated Safe, Reported Broken</h1>
+    <p class="byline">What crash-test scores miss about how vehicles actually fail</p>
+    <nav class="tabs">
+      <a href="index.html">Introduction</a>
+      <a href="dataprep_eda.html" class="active">DataPrep_EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="naivebayes.html">NaiveBayes</a>
+      <a href="dectrees.html">DecTrees</a>
+      <a href="svms.html">SVMs</a>
+      <a href="regression.html">Regression</a>
+      <a href="nn.html">NN</a>
+      <a href="conclusions.html">Conclusions</a>
+      <a href="about.html">About Me</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h2>Data Preparation and Exploratory Analysis</h2>
+
+<p class="lede">Four separate collections of federal vehicle-safety data were
+gathered, repaired, and joined into a single analysable table. This section
+documents where every value came from, what was wrong with it, and what it looks
+like once corrected.</p>
+
+<h2>Where the data came from, and why</h2>
+
+<p>The question driving this project needs two kinds of evidence that are not
+normally stored together: what a laboratory says about a vehicle before it is
+sold, and what its owners report after. Both are published by the U.S. National
+Highway Traffic Safety Administration, the federal body responsible for vehicle
+safety standards, and both are in the public domain. Data were gathered by two
+independent routes so that the project does not depend on a single mechanism.</p>
+
+<h3>Route 1 &mdash; Application Programming Interfaces</h3>
+
+<p>An <b>API</b> (Application Programming Interface) is a published address that
+returns structured data to a program rather than a page to a browser. Three
+keyless NHTSA endpoints were queried in Python with the <code>requests</code>
+library, sweeping 39 vehicle models across model years 2016 to 2024.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Source</th><th>Endpoint</th><th>What it provides</th></tr></thead>
+  <tbody>
+    <tr><td>Complaints</td>
+        <td><code>api.nhtsa.gov/complaints/complaintsByVehicle</code></td>
+        <td>Owner-filed defect reports: component, crash and fire flags, injuries,
+            deaths, dates, narrative</td></tr>
+    <tr><td>Recalls</td>
+        <td><code>api.nhtsa.gov/recalls/recallsByVehicle</code></td>
+        <td>Recall campaigns: affected component, consequence, remedy, park-outside
+            warnings</td></tr>
+    <tr><td>Safety Ratings</td>
+        <td><code>api.nhtsa.gov/SafetyRatings/...</code></td>
+        <td>Crash-test star ratings, rollover probability, driver-assistance
+            equipment</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>A single core request looks like this, and returns JSON:</p>
+<p><code>GET https://api.nhtsa.gov/complaints/complaintsByVehicle?make=honda&amp;model=accord&amp;modelYear=2020</code></p>
+
+<p>Every response is cached to disk before parsing, so the gathering step is
+resumable and reproducible without repeatedly loading the public service.</p>
+
+<h3>Route 2 &mdash; Bulk file download</h3>
+
+<p>The APIs expose current records only. To gain historical depth, the Office of
+Defects Investigation flat file was downloaded directly and parsed from its
+tab-delimited layout:</p>
+<p><code>https://static.nhtsa.gov/odi/ffdd/inv/FLAT_INV.zip</code></p>
+
+<div class="callout">
+  <p><b>All code and all data are linked.</b></p>
+  <ul>
+    <li>Gathering: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/fetch_data.py">fetch_data.py</a>
+        &middot; Cleaning: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/clean_data.py">clean_data.py</a>
+        &middot; Visualisation: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/eda_visualize.py">eda_visualize.py</a></li>
+    <li>Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a> &mdash;
+        <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/raw/complaints_raw.csv.gz">complaints</a>,
+        <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/raw/recalls_raw.csv.gz">recalls</a>,
+        <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/raw/safety_ratings_raw.csv.gz">safety ratings</a>,
+        <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/raw/investigations_raw.csv.gz">investigations</a></li>
+    <li>Cleaned data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean">data/clean/</a> &mdash;
+        <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/complaints_clean.csv.gz">complaints</a>,
+        <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/vehicle_model_year.csv">joined model-year table</a></li>
+    <li>Full cleaning log:
+        <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean/cleaning_report.txt">cleaning_report.txt</a></li>
+  </ul>
+</div>
+
+<h2>What was gathered</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Table</th><th>Source</th><th>Raw rows</th><th>Clean rows</th><th>Columns</th></tr></thead>
+  <tbody>
+    <tr><td>Complaints</td><td>API</td><td>84,135</td><td>83,967</td><td>21</td></tr>
+    <tr><td>Recalls</td><td>API</td><td>1,662</td><td>1,662</td><td>15</td></tr>
+    <tr><td>Safety ratings</td><td>API</td><td>505</td><td>421</td><td>27</td></tr>
+    <tr><td>Investigations</td><td>Bulk download</td><td>154,380</td><td>138,271</td><td>10</td></tr>
+    <tr><td><b>Joined model-year table</b></td><td>Derived</td><td>&mdash;</td><td>229</td><td>30</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>What the data looked like before and after</h2>
+
+<figure>
+  <img src="figures/snapshot_raw_complaints.png" alt="Raw complaints as returned by the API">
+  <figcaption><b>Raw complaints as returned by the API.</b> Dates arrive as text, the vehicle identification number is partial, and the component field packs several systems into one comma-separated string. Nothing here is typed, validated, or ready to analyse.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/snapshot_raw_ratings.png" alt="Raw safety ratings, showing two disguised defects">
+  <figcaption><b>Raw safety ratings, showing two disguised defects.</b> Missing star ratings are written as the text 'Not Rated' rather than left empty, and untested vehicles carry a rollover probability of exactly 0.0. A literal zero percent chance of rolling over is physically impossible, so that value is a placeholder masquerading as a measurement.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/snapshot_clean_complaints.png" alt="Cleaned complaints">
+  <figcaption><b>Cleaned complaints.</b> Dates are parsed, the component field is reduced to a single primary system, and derived fields record severity, reporting delay, and vehicle age. The identification number is truncated to its manufacturer prefix for privacy.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/snapshot_clean_model_year.png" alt="The joined model-year table">
+  <figcaption><b>The joined model-year table.</b> Each row is one make, model, and model year, combining ownership-record measures with laboratory ratings. This is the table the later modules will cluster, decompose, and model.</figcaption>
+</figure>
+
+<h2>Cleaning: what was wrong and what was done</h2>
+
+<p>The cleaning and the exploration were carried out together rather than in
+sequence, because most of the defects below were only visible once the data were
+plotted. Every step is logged with before-and-after row counts in the
+<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean/cleaning_report.txt">cleaning report</a>.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Problem found</th><th>Evidence</th><th>Action taken</th></tr></thead>
+  <tbody>
+    <tr><td>Missing values stored as text</td>
+        <td><code>"Not Rated"</code> in every star-rating column; a blank space in
+            the tip-test column</td>
+        <td>Converted to true missing values, then handled explicitly</td></tr>
+    <tr><td>Sentinel disguised as a measurement</td>
+        <td>Rollover probability of exactly <code>0.0</code> on 46 vehicles &mdash;
+            matching the unrated set exactly</td>
+        <td>Recoded to missing; genuine values range from 6.6% to 20.8%</td></tr>
+    <tr><td>Columns with no information</td>
+        <td><code>RolloverRating2</code> and <code>RolloverPossibility2</code> hold one
+            constant value in every row</td>
+        <td>Dropped</td></tr>
+    <tr><td>Impossible dates</td>
+        <td>Incident dates as early as 1917 on vehicles built after 2015; two
+            complaints filed before the incident occurred</td>
+        <td>166 records removed as logically impossible</td></tr>
+    <tr><td>Two different date formats</td>
+        <td>Complaints use month/day/year; recalls use day/month/year</td>
+        <td>Parsed separately with explicit formats rather than guessed</td></tr>
+    <tr><td>Multi-label category field</td>
+        <td>1,408 distinct comma-joined component combinations</td>
+        <td>Reduced to the primary system, giving 41 usable categories</td></tr>
+    <tr><td>Sentinel model year</td>
+        <td>Bulk file uses <code>9999</code> for unknown</td>
+        <td>16,108 such records removed</td></tr>
+    <tr><td>Personal data</td>
+        <td>Partial vehicle identification numbers present, 1,721 malformed</td>
+        <td>Truncated to the three-character manufacturer prefix</td></tr>
+    <tr><td>Join would duplicate outcomes</td>
+        <td>Ratings are issued per body style, so a naive join copied one set of
+            complaint counts onto several rows</td>
+        <td>Ratings averaged to model-year level before joining</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Variables added</h3>
+<ul>
+  <li><b>Discretisation:</b> a five-level <code>harm_level</code> outcome
+      (no crash or fire &rarr; fire &rarr; crash &rarr; injury &rarr; fatal), and a
+      four-band rollover risk category.</li>
+  <li><b>Derived measures:</b> reporting delay in days, vehicle age at incident,
+      crash rate, fire rate, injuries per hundred complaints, and recall counts per
+      model-year.</li>
+  <li><b>Binary indicators:</b> whether forward-collision warning and lane-departure
+      warning were standard equipment on every rated body style.</li>
+</ul>
+
+<div class="callout">
+  <p><b>Result:</b> 99.8% of complaint records survived cleaning, and the final
+  tables contain no missing values in any analysed column. Where records were
+  removed, they were removed for a stated, checkable reason.</p>
+</div>
+
+<h2>Exploring the data</h2>
+
+<p>Sixteen figures below examine the record from both directions: what owners
+report, and what the laboratory measured.</p>
+
+<figure>
+  <img src="figures/fig01_complaints_per_year.png" alt="Complaints filed per year">
+  <figcaption><b>Complaints filed per year.</b> Complaint volume climbs steadily across the period before falling away in the most recent year. The final year is incomplete because the data were gathered part-way through it, so that decline reflects collection timing rather than safer vehicles.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig02_complaints_by_segment.png" alt="Complaint volume by segment">
+  <figcaption><b>Complaint volume by segment.</b> Sport-utility vehicles dominate the record with roughly half of all complaints, followed at a distance by sedans. Raw volume mostly tracks how many of each segment are on the road, so these counts are a measure of exposure rather than of risk.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig03_harm_level.png" alt="Severity of reported incidents">
+  <figcaption><b>Severity of reported incidents.</b> The overwhelming majority of complaints describe a fault with no crash and no fire, while fatal reports number in the dozens. A logarithmic axis is used because the categories differ by more than three orders of magnitude.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig04_top_components.png" alt="Systems drawing the most complaints">
+  <figcaption><b>Systems drawing the most complaints.</b> Electrical systems, powertrain, engine, and steering account for the largest share of reports. The prominence of electrical faults is notable given how little of a crash test addresses electronics.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig05_crash_rate_by_component.png" alt="Which faults actually end in a crash">
+  <figcaption><b>Which faults actually end in a crash.</b> Ranking systems by the share of their complaints that involved a collision reorders the picture entirely, lifting less common but more dangerous failures to the top. The highest-risk system is highlighted to separate it from the rest of the ranking.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig06_reporting_lag.png" alt="Delay between incident and complaint">
+  <figcaption><b>Delay between incident and complaint.</b> Almost half of all complaints are filed within a week of the incident, but the distribution has a very long tail stretching to several years. The axis is logarithmic because that tail would otherwise compress the bulk of the data into a single bar.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig07_vehicle_age.png" alt="Vehicle age when problems occur">
+  <figcaption><b>Vehicle age when problems occur.</b> Reported problems peak in the first two years of a vehicle's life and decline steadily thereafter. Part of this pattern is real early-failure behaviour and part is that owners of newer vehicles are more likely to report at all.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig08_fire_rate_by_segment.png" alt="Fire reports by segment">
+  <figcaption><b>Fire reports by segment.</b> Luxury vehicles and trucks show the highest proportion of fire-related complaints, while electrified vehicles sit at the lower end. This runs against the common assumption that battery vehicles are the most fire-prone segment on the road.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig09_star_rating_distribution.png" alt="Distribution of crash-test ratings">
+  <figcaption><b>Distribution of crash-test ratings.</b> Most rated model-years in this collection hold four and a half to five stars, with very little spread below that. This compression is itself a finding: the rating scale separates modern vehicles from one another only weakly.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig10_rollover_by_segment.png" alt="Rollover probability by segment">
+  <figcaption><b>Rollover probability by segment.</b> Trucks and sport-utility vehicles carry roughly twice the estimated rollover probability of electric vehicles and sedans, reflecting their higher centres of gravity. The separation between segments is large and consistent.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig11_crashrate_vs_rollover.png" alt="Crash involvement against rollover risk">
+  <figcaption><b>Crash involvement against rollover risk.</b> Each point is one model-year, sized by how many complaints it generated, and the cloud shows no clear upward trend. Vehicles most likely to tip are not the vehicles whose complaints most often involve a collision.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig12_correlation_heatmap.png" alt="Correlations among safety measures">
+  <figcaption><b>Correlations among safety measures.</b> The strongest relationships are between measures derived from the same source, such as crash rate and overall severity. Crash-test ratings correlate only weakly with any ownership-record measure, which is the central tension this project investigates.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig13_top_model_years.png" alt="Model-years with the most complaints">
+  <figcaption><b>Model-years with the most complaints.</b> A small number of model-years account for a disproportionate share of the record. Identifying them early matters because they are where any predictive model will gain or lose most of its accuracy.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig14_harm_mix_by_segment.png" alt="Outcome mix within each segment">
+  <figcaption><b>Outcome mix within each segment.</b> Normalising each segment to its own total removes the effect of fleet size and exposes differences in outcome. Hybrid and electric complaints are the most likely to involve a crash, while minivans are the least.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig15_investigations_per_year.png" alt="Investigation records opened per year">
+  <figcaption><b>Investigation records opened per year.</b> The bulk download extends back three decades and shows how regulatory activity has varied over time. This file provides historical depth that the current application programming interface does not expose.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig16_recall_components.png" alt="Systems most often recalled">
+  <figcaption><b>Systems most often recalled.</b> Electrical systems, airbags, and reversing-camera equipment lead the recall record. Comparing this ranking against the complaint ranking shows where owner reports and formal regulatory action agree.</figcaption>
+</figure>
+
+<h2>What the exploration suggests</h2>
+
+<p>Three patterns stand out before any modelling has been done. First, crash-test
+ratings barely move: 85% of the rated model-years in this collection carry an
+average of four and a half stars or better, so the measure that buyers rely on
+separates modern vehicles only weakly. Second, star ratings show almost no
+relationship with any ownership-record measure, while rollover probability is
+moderately and negatively related to the overall score &mdash; the laboratory
+number appears to describe a different dimension of safety from the one the
+complaint record captures. Third, the segments that look safest on volume look
+different once exposure is removed: hybrid and electric complaints are the most
+likely to involve a crash, yet the least likely to involve a fire, which inverts
+a common assumption.</p>
+
+<p>These are associations in observational data, not causal findings, and the
+complaint record is self-selected: it reflects who chose to report, not everything
+that went wrong. The modelling modules that follow will test whether these
+patterns survive more careful treatment.</p>
+</main>
+<footer><div>
+  CSCI 5612 project website &middot; Rajeshwar Rengeswaran &middot;
+  Data: <a href="https://www.nhtsa.gov/">U.S. National Highway Traffic Safety Administration</a> &middot;
+  <a href="https://github.com/Rajeshwar987/csci5612-project">Project code and data repository</a>
+</div></footer>
+</body>
+</html>

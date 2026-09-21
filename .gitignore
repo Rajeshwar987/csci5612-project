@@ -1,0 +1,13 @@
+# Cached raw API responses (86 MB, 1,373 files).
+# These are a local resume/reproducibility aid only: fetch_data.py rebuilds
+# them from the public NHTSA endpoints, and every dataset derived from them
+# is committed under data/raw/ and data/clean/.
+data/raw/cache/
+
+# Bulk download archive; investigations_raw.csv.gz is committed instead.
+data/raw/FLAT_INV.zip
+
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

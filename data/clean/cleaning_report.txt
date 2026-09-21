@@ -1,0 +1,53 @@
+==============================================================================
+CLEANING REPORT - NHTSA vehicle safety data
+reference date: 2026-09-20
+==============================================================================
+
+[1] COMPLAINTS
+    raw shape: (84135, 15)
+    drop duplicate complaint IDs                          84,135 ->  84,135  (+0)
+    drop unparseable dates                                84,135 ->  84,135  (+0)
+    drop filed-before-incident / future dates             84,135 ->  84,133  (+2)
+    drop incidents predating the model year               84,133 ->  83,967  (+166)
+    drop implausible reporting lags (>15 yrs)             83,967 ->  83,967  (+0)
+    recoded UNKNOWN MANUFACTURER sentinel                      1 rows
+    components collapsed to primary system                 1,408 ->      41 categories
+    VIN reduced to WMI prefix (privacy)                    1,721 malformed flagged
+    FINAL: (83967, 21)  (kept 99.8% of raw rows)
+
+[2] SAFETY RATINGS
+    raw shape: (505, 37)
+    drop duplicate VehicleId records                         505 ->     503  (+2)
+    dropped zero-variance columns                        ['RolloverRating2', 'RolloverPossibility2']
+    recoded RolloverPossibility 0.0 sentinel -> NA            46 rows
+    drop vehicles with no overall rating                     503 ->     421  (+82)
+    FINAL: (421, 27)
+
+[3] RECALLS
+    raw shape: (1662, 19)
+    drop duplicate campaign/vehicle rows                   1,662 ->   1,662  (+0)
+    dropped NHTSAActionNumber (92% empty) and Notes     
+    drop unparseable recall dates                          1,662 ->   1,662  (+0)
+    filled missing park/OTA flags with False            
+    FINAL: (1662, 15)
+
+[4] INVESTIGATIONS (bulk file)
+    raw shape: (154380, 11)
+    drop unknown/sentinel model years (incl. 9999)       154,380 -> 138,272  (+16,108)
+    drop records with no open date                       138,272 -> 138,272  (+0)
+    drop investigations closed before opening            138,272 -> 138,271  (+1)
+    FINAL: (138271, 10)
+
+[5] JOINED MODEL-YEAR TABLE
+    collapse rating trims to one row per model-year          421 ->     229  (+192)
+    inner-join complaints aggregate to crash-test ratings     258 ->     229  (+29)
+    FINAL: (229, 30)
+
+==============================================================================
+WROTE:
+    complaints_clean.csv.gz               10,642 KB
+    crash_test_images.csv                     86 KB
+    investigations_clean.csv.gz              247 KB
+    recalls_clean.csv                      1,305 KB
+    safety_ratings_clean.csv                  71 KB
+    vehicle_model_year.csv                    34 KB
