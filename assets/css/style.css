@@ -1,37 +1,114 @@
-/* CSCI 5612 Project - shared stylesheet */
+/* ============================================================
+   CSCI 5612 Project - shared stylesheet
+
+   Visual language adapted from Apple's Liquid Glass design rules:
+   - glass is the material of the NAVIGATION layer only, never content
+   - never glass on glass
+   - tint only the primary action (here: the current tab)
+   - strip decorated bars; build hierarchy from layout, not borders
+   - concentric radii: inner radius = parent radius minus padding
+   - capsule radius = half the element height
+   - a soft scroll-edge effect separates the nav layer from content
+   Reduced-motion and increased-contrast are honoured at the bottom.
+   ============================================================ */
 
 :root {
+  /* ink */
   --ink: #16212e;
   --ink-soft: #46586c;
-  --line: #dfe5ec;
-  --bg: #ffffff;
-  --bg-soft: #f5f7fa;
+  --ink-faint: #7a8b9e;
+
+  /* surfaces */
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-sunk: #f4f6f9;
+  --line: #e3e8ee;
+  --line-soft: #eef1f5;
+
+  /* brand */
+  --navy: #16304f;
+  --navy-deep: #0e2136;
   --accent: #b3541e;
-  --accent-soft: #fbf1e9;
-  --navy: #1d3453;
+  --accent-bright: #d2691e;
+  --accent-soft: #fdf4ed;
+
+  /* glass (navigation layer only) */
+  --glass-tint: rgba(255, 255, 255, 0.10);
+  --glass-edge: rgba(255, 255, 255, 0.22);
+  --glass-specular: rgba(255, 255, 255, 0.40);
+
+  /* concentric shape system */
+  --r-outer: 18px;
+  --pad: 6px;
+  --r-inner: calc(var(--r-outer) - var(--pad));
+
+  /* elevation */
+  --lift-1: 0 1px 2px rgba(16, 33, 54, 0.05), 0 4px 14px rgba(16, 33, 54, 0.05);
+  --lift-2: 0 2px 4px rgba(16, 33, 54, 0.06), 0 12px 32px rgba(16, 33, 54, 0.09);
+
   --max: 1080px;
+  --ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
+  /* A serif for sustained reading - the job New York does on Apple platforms. */
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 18px;
-  line-height: 1.68;
+  font-size: 18.5px;
+  line-height: 1.7;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- masthead + navigation ---------- */
+/* ============================================================
+   NAVIGATION LAYER - the only place glass is allowed
+   ============================================================ */
 
 .masthead {
-  background: var(--navy);
+  position: relative;
+  background:
+    radial-gradient(120% 140% at 12% -10%, #24507f 0%, rgba(36, 80, 127, 0) 60%),
+    linear-gradient(168deg, var(--navy) 0%, var(--navy-deep) 100%);
   color: #fff;
-  padding: 30px 20px 0;
+  padding: 34px 20px 0;
+  isolation: isolate;
+}
+
+/* Specular highlight: glass materialises by bending light at its edge. */
+.masthead::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent, var(--glass-specular) 18%, var(--glass-specular) 82%, transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Soft scroll-edge effect: separates the nav layer from scrolling content. */
+.masthead::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -26px;
+  height: 26px;
+  background: linear-gradient(to bottom,
+    rgba(14, 33, 54, 0.10), rgba(14, 33, 54, 0));
+  pointer-events: none;
+  z-index: 2;
 }
 
 .masthead-inner {
@@ -40,141 +117,206 @@ body {
 }
 
 .masthead .course {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  /* Loose tracking is correct at small optical sizes. */
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #9fb4cd;
-  margin: 0 0 6px;
+  color: #8fa9c6;
+  margin: 0 0 10px;
 }
 
 .masthead h1 {
-  font-size: 30px;
-  line-height: 1.25;
-  margin: 0 0 4px;
+  font-size: clamp(28px, 4.4vw, 40px);
+  line-height: 1.12;
+  /* Tight tracking is correct at display sizes. */
+  letter-spacing: -0.021em;
+  margin: 0 0 6px;
   font-weight: 600;
+  color: #fff;
 }
 
 .masthead .byline {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 14px;
-  color: #9fb4cd;
-  margin: 0 0 22px;
+  font-family: var(--ui);
+  font-size: 14.5px;
+  letter-spacing: 0.002em;
+  color: #9db4cd;
+  margin: 0 0 26px;
+  max-width: 54ch;
 }
+
+/* --- tab bar: capsules, undecorated, one tint --------------- */
 
 nav.tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  border-bottom: 3px solid var(--accent);
+  gap: var(--pad);
+  padding: var(--pad);
+  /* Glass container. Radius is concentric with the capsules inside it. */
+  background: var(--glass-tint);
+  border: 1px solid var(--glass-edge);
+  border-bottom: none;
+  border-radius: var(--r-outer) var(--r-outer) 0 0;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
 }
 
 nav.tabs a {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--ui);
   font-size: 13.5px;
   font-weight: 500;
+  letter-spacing: 0.004em;
   text-decoration: none;
-  color: #cfdbe8;
-  padding: 9px 14px;
-  border-radius: 5px 5px 0 0;
+  color: #c8d8e8;
+  padding: 8px 15px;
+  /* Capsule: radius is half the element height. */
+  border-radius: 999px;
   white-space: nowrap;
+  transition: background-color 0.22s ease, color 0.22s ease;
 }
 
-nav.tabs a:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
-
-nav.tabs a.active {
-  background: var(--accent);
+nav.tabs a:hover {
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
-/* ---------- page body ---------- */
+nav.tabs a:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+  color: #fff;
+}
+
+/* The current tab is the only tinted element. Nothing else competes. */
+nav.tabs a.active {
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+  color: #fff;
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 1px 6px rgba(179, 84, 30, 0.40);
+}
+
+/* ============================================================
+   CONTENT LAYER - opaque, never glass
+   ============================================================ */
 
 main {
   max-width: var(--max);
   margin: 0 auto;
-  padding: 42px 20px 80px;
+  padding: 52px 20px 90px;
 }
 
 h2 {
-  font-size: 25px;
-  margin: 46px 0 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+  font-size: clamp(23px, 2.7vw, 28px);
+  line-height: 1.24;
+  letter-spacing: -0.014em;
+  margin: 58px 0 16px;
+  padding-bottom: 10px;
   font-weight: 600;
+  border-bottom: 1px solid var(--line);
 }
 
 main > h2:first-child { margin-top: 0; }
 
 h3 {
-  font-size: 19px;
-  margin: 32px 0 10px;
+  font-size: 19.5px;
+  line-height: 1.34;
+  letter-spacing: -0.006em;
+  margin: 38px 0 11px;
   font-weight: 600;
 }
 
-p { margin: 0 0 17px; }
+p { margin: 0 0 18px; }
 
-a { color: var(--accent); }
+main p { max-width: 74ch; }
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover { color: var(--accent-bright); }
 
 code {
   font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.85em;
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 1px 5px;
+  font-size: 0.83em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  padding: 1.5px 6px;
   word-break: break-all;
 }
 
-/* ---------- reusable blocks ---------- */
+/* --- reusable blocks ---------------------------------------- */
 
 .lede {
-  font-size: 20px;
+  font-size: clamp(19px, 2vw, 21px);
+  line-height: 1.58;
   color: var(--ink-soft);
   border-left: 3px solid var(--accent);
-  padding-left: 18px;
-  margin-bottom: 34px;
+  padding-left: 20px;
+  margin-bottom: 38px;
+  max-width: 68ch;
 }
 
 .callout {
   background: var(--accent-soft);
-  border: 1px solid #edd9c8;
+  border: 1px solid #f0dcc9;
   border-left: 4px solid var(--accent);
-  border-radius: 0 6px 6px 0;
-  padding: 16px 20px;
-  margin: 26px 0;
+  border-radius: 0 var(--r-inner) var(--r-inner) 0;
+  padding: 18px 22px;
+  margin: 30px 0;
 }
 
-.callout p:last-child { margin-bottom: 0; }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+
+.placeholder {
+  background: var(--surface-sunk);
+  border: 1px dashed #c6d0db;
+  border-radius: var(--r-outer);
+  padding: 32px 28px;
+  color: var(--ink-soft);
+}
+
+.placeholder p:last-child { margin-bottom: 0; }
 
 blockquote {
-  margin: 28px 0;
-  padding: 4px 0 4px 22px;
+  margin: 30px 0;
+  padding: 6px 0 6px 24px;
   border-left: 3px solid var(--accent);
-  font-size: 20px;
+  font-size: clamp(19px, 2vw, 21px);
   line-height: 1.55;
+  letter-spacing: -0.004em;
   color: var(--navy);
   font-style: italic;
 }
 
 blockquote p:last-child { margin-bottom: 0; }
 
-.placeholder {
-  background: var(--bg-soft);
-  border: 1px dashed #c3ccd7;
-  border-radius: 8px;
-  padding: 30px 26px;
-  color: var(--ink-soft);
+ol.questions {
+  padding-left: 26px;
+  max-width: 74ch;
 }
 
-.placeholder p:last-child { margin-bottom: 0; }
+ol.questions li {
+  margin-bottom: 13px;
+  padding-left: 4px;
+}
 
-ol.questions { padding-left: 24px; }
-ol.questions li { margin-bottom: 11px; }
+ol.questions li::marker {
+  color: var(--accent);
+  font-weight: 600;
+}
 
-/* ---------- figures ---------- */
+main ul { max-width: 74ch; }
+main ul li { margin-bottom: 7px; }
+
+/* --- figures: elevated, but never glass --------------------- */
 
 figure {
-  margin: 34px 0;
+  margin: 40px 0;
   padding: 0;
 }
 
@@ -182,71 +324,147 @@ figure img {
   width: 100%;
   height: auto;
   display: block;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
+  border-radius: var(--r-outer);
+  box-shadow: var(--lift-1);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+figure:hover img {
+  box-shadow: var(--lift-2);
+  transform: translateY(-2px);
 }
 
 figure figcaption {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--ui);
   font-size: 14.5px;
-  line-height: 1.6;
+  line-height: 1.62;
   color: var(--ink-soft);
-  margin-top: 11px;
-  padding-left: 13px;
-  border-left: 3px solid var(--line);
+  margin-top: 13px;
+  padding-left: 15px;
+  border-left: 2px solid var(--line);
+  max-width: 78ch;
 }
 
-figure figcaption b { color: var(--ink); }
+figure figcaption b { color: var(--ink); font-weight: 600; }
 
 .figure-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 26px;
+  gap: 28px;
 }
 
 .figure-grid figure { margin: 0; }
 
-/* ---------- tables ---------- */
+/* --- tables ------------------------------------------------- */
 
-.table-wrap { overflow-x: auto; margin: 26px 0; }
+.table-wrap {
+  overflow-x: auto;
+  margin: 30px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-outer);
+  box-shadow: var(--lift-1);
+  background: var(--surface);
+}
 
 table {
   border-collapse: collapse;
   width: 100%;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--ui);
   font-size: 14.5px;
 }
 
 th, td {
-  border: 1px solid var(--line);
-  padding: 8px 12px;
+  padding: 11px 16px;
   text-align: left;
   vertical-align: top;
+  border-bottom: 1px solid var(--line-soft);
 }
 
-th { background: var(--bg-soft); font-weight: 600; }
+th {
+  background: var(--surface-sunk);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.032em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
 
-tbody tr:nth-child(even) { background: #fafbfd; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #fafbfc; }
 
-/* ---------- footer ---------- */
+/* --- footer ------------------------------------------------- */
 
 footer {
   border-top: 1px solid var(--line);
-  background: var(--bg-soft);
-  padding: 26px 20px;
+  background: var(--surface-sunk);
+  padding: 30px 20px;
 }
 
 footer div {
   max-width: var(--max);
   margin: 0 auto;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--ui);
   font-size: 13.5px;
+  line-height: 1.65;
   color: var(--ink-soft);
 }
 
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
 @media (max-width: 640px) {
-  body { font-size: 17px; }
-  .masthead h1 { font-size: 24px; }
-  nav.tabs a { font-size: 12.5px; padding: 8px 10px; }
+  body { font-size: 17.5px; }
+  .masthead { padding-top: 26px; }
+  .masthead .byline { margin-bottom: 20px; }
+  nav.tabs a { font-size: 12.5px; padding: 7px 12px; }
+  main { padding: 38px 16px 64px; }
+  h2 { margin-top: 44px; }
+  figure { margin: 30px 0; }
+  th, td { padding: 9px 12px; }
+}
+
+/* ============================================================
+   ACCESSIBILITY
+   Liquid Glass gets these free at the system level; on the web
+   they have to be written out.
+   ============================================================ */
+
+/* Reduced Motion decreases lensing and elastic effects. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  figure:hover img { transform: none; }
+}
+
+/* Increased Contrast renders glass solid, with a contrasting border. */
+@media (prefers-contrast: more) {
+  :root {
+    --ink-soft: #2d3c4d;
+    --line: #9aa8b8;
+  }
+  nav.tabs {
+    background: var(--navy-deep);
+    border-color: #ffffff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  nav.tabs a { color: #ffffff; }
+  nav.tabs a.active { background: var(--accent); box-shadow: none; }
+  figure img, .table-wrap { box-shadow: none; border-color: #6b7c8f; }
+  .masthead::before, .masthead::after { display: none; }
+}
+
+@media print {
+  .masthead, footer { background: #fff !important; color: #000 !important; }
+  nav.tabs { display: none; }
+  figure img, .table-wrap { box-shadow: none; }
+  a { color: #000; }
 }
