@@ -1,322 +1,328 @@
 /* ============================================================
-   CSCI 5612 Project - shared stylesheet
+   Rated Safe, Reported Broken - CSCI 5612 project
 
-   Visual language adapted from Apple's Liquid Glass design rules:
-   - glass is the material of the NAVIGATION layer only, never content
-   - never glass on glass
-   - tint only the primary action (here: the current tab)
-   - strip decorated bars; build hierarchy from layout, not borders
-   - concentric radii: inner radius = parent radius minus padding
-   - capsule radius = half the element height
-   - a soft scroll-edge effect separates the nav layer from content
-   Reduced-motion and increased-contrast are honoured at the bottom.
+   Direction: the test-facility record. The page borrows from the
+   subject's own materials - federal safety reports, instrumentation,
+   crash-test documentation - rather than from dashboard convention.
+
+   Rules this stylesheet holds itself to:
+   - one accent, spent on interface state and severity, nowhere else
+   - hairline rules are the only separator; no cards, no shadows
+   - figures and tables break out wider than the prose measure, which
+     makes the data structural instead of decorative
+   - sentence case everywhere; no tracked-out capitals
+   - motion only in response to something the reader did
    ============================================================ */
 
 :root {
-  /* ink */
-  --ink: #16212e;
-  --ink-soft: #46586c;
-  --ink-faint: #7a8b9e;
+  --paper: #ffffff;
+  --paper-sunk: #f6f8f9;
+  --ink: #0e1a24;
+  --graphite: #5b6873;
+  --rule: #d6dce2;
+  --rule-faint: #e8edf1;
+  --signal: #c8102e;
+  --signal-sunk: #fdf2f3;
 
-  /* surfaces */
-  --bg: #fbfaf8;
-  --surface: #ffffff;
-  --surface-sunk: #f4f6f9;
-  --line: #e3e8ee;
-  --line-soft: #eef1f5;
+  /* 4px base */
+  --s1: 4px;   --s2: 8px;   --s3: 12px;  --s4: 16px;
+  --s5: 24px;  --s6: 32px;  --s7: 48px;  --s8: 64px;  --s9: 96px;
 
-  /* brand */
-  --navy: #16304f;
-  --navy-deep: #0e2136;
-  --accent: #b3541e;
-  --accent-bright: #d2691e;
-  --accent-soft: #fdf4ed;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
 
-  /* glass (navigation layer only) */
-  --glass-tint: rgba(255, 255, 255, 0.10);
-  --glass-edge: rgba(255, 255, 255, 0.22);
-  --glass-specular: rgba(255, 255, 255, 0.40);
-
-  /* concentric shape system */
-  --r-outer: 18px;
-  --pad: 6px;
-  --r-inner: calc(var(--r-outer) - var(--pad));
-
-  /* elevation */
-  --lift-1: 0 1px 2px rgba(16, 33, 54, 0.05), 0 4px 14px rgba(16, 33, 54, 0.05);
-  --lift-2: 0 2px 4px rgba(16, 33, 54, 0.06), 0 12px 32px rgba(16, 33, 54, 0.09);
-
-  --max: 1080px;
-  --ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", system-ui, sans-serif;
+  --measure: 66ch;
+  --gutter: 20px;
 }
 
 * { box-sizing: border-box; }
 
 html {
-  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 72px;   /* the pinned nav must not cover anchor targets */
 }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
-  /* A serif for sustained reading - the job New York does on Apple platforms. */
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 18.5px;
-  line-height: 1.7;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.72;
   font-optical-sizing: auto;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
 /* ============================================================
-   NAVIGATION LAYER - the only place glass is allowed
+   MASTHEAD - scrolls away; the nav below it does the persisting
    ============================================================ */
 
 .masthead {
-  position: relative;
-  background:
-    radial-gradient(120% 140% at 12% -10%, #24507f 0%, rgba(36, 80, 127, 0) 60%),
-    linear-gradient(168deg, var(--navy) 0%, var(--navy-deep) 100%);
-  color: #fff;
-  padding: 34px 20px 0;
-  isolation: isolate;
-}
-
-/* Specular highlight: glass materialises by bending light at its edge. */
-.masthead::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent, var(--glass-specular) 18%, var(--glass-specular) 82%, transparent);
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-/* Soft scroll-edge effect: separates the nav layer from scrolling content. */
-.masthead::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -26px;
-  height: 26px;
-  background: linear-gradient(to bottom,
-    rgba(14, 33, 54, 0.10), rgba(14, 33, 54, 0));
-  pointer-events: none;
-  z-index: 2;
-}
-
-.masthead-inner {
-  max-width: var(--max);
-  margin: 0 auto;
+  padding: var(--s8) 0 var(--s6);
+  border-bottom: 1px solid var(--rule);
 }
 
 .masthead .course {
-  font-family: var(--ui);
-  font-size: 11.5px;
-  font-weight: 600;
-  /* Loose tracking is correct at small optical sizes. */
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #8fa9c6;
-  margin: 0 0 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--graphite);
+  margin: 0 0 var(--s4);
 }
 
 .masthead h1 {
-  font-size: clamp(28px, 4.4vw, 40px);
-  line-height: 1.12;
-  /* Tight tracking is correct at display sizes. */
-  letter-spacing: -0.021em;
-  margin: 0 0 6px;
+  font-family: var(--serif);
+  font-size: clamp(34px, 5.2vw, 52px);
   font-weight: 600;
-  color: #fff;
+  line-height: 1.08;
+  letter-spacing: -0.018em;
+  margin: 0 0 var(--s3);
+  max-width: 20ch;
 }
 
 .masthead .byline {
-  font-family: var(--ui);
-  font-size: 14.5px;
-  letter-spacing: 0.002em;
-  color: #9db4cd;
-  margin: 0 0 26px;
-  max-width: 54ch;
-}
-
-/* --- tab bar: capsules, undecorated, one tint --------------- */
-
-nav.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--pad);
-  padding: var(--pad);
-  /* Glass container. Radius is concentric with the capsules inside it. */
-  background: var(--glass-tint);
-  border: 1px solid var(--glass-edge);
-  border-bottom: none;
-  border-radius: var(--r-outer) var(--r-outer) 0 0;
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-}
-
-nav.tabs a {
-  font-family: var(--ui);
-  font-size: 13.5px;
-  font-weight: 500;
-  letter-spacing: 0.004em;
-  text-decoration: none;
-  color: #c8d8e8;
-  padding: 8px 15px;
-  /* Capsule: radius is half the element height. */
-  border-radius: 999px;
-  white-space: nowrap;
-  transition: background-color 0.22s ease, color 0.22s ease;
-}
-
-nav.tabs a:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-
-nav.tabs a:focus-visible {
-  outline: 2px solid var(--accent-bright);
-  outline-offset: 2px;
-  color: #fff;
-}
-
-/* The current tab is the only tinted element. Nothing else competes. */
-nav.tabs a.active {
-  background: linear-gradient(180deg, var(--accent-bright), var(--accent));
-  color: #fff;
-  font-weight: 600;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
-    0 1px 6px rgba(179, 84, 30, 0.40);
+  font-family: var(--serif);
+  font-size: clamp(19px, 2.2vw, 22px);
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--graphite);
+  margin: 0;
+  max-width: 44ch;
 }
 
 /* ============================================================
-   CONTENT LAYER - opaque, never glass
+   PERSISTENT NAVIGATION
    ============================================================ */
 
-main {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: 52px 20px 90px;
+nav.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
 }
+
+/* When the tab row overflows, a short fade at the right edge reports that
+   there are more sections off-screen. It is suppressed once they all fit. */
+nav.tabs::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 1px;
+  width: 48px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--paper));
+  pointer-events: none;
+}
+
+@media (min-width: 1140px) {
+  nav.tabs::after { display: none; }
+}
+
+nav.tabs .wrap {
+  display: flex;
+  gap: var(--s5);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+nav.tabs .wrap::-webkit-scrollbar { display: none; }
+
+nav.tabs a {
+  flex: none;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--graphite);
+  text-decoration: none;
+  padding: 17px 0 15px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+nav.tabs a:hover { color: var(--ink); }
+
+nav.tabs a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -2px;
+  color: var(--ink);
+}
+
+/* The single accent: you are here. */
+nav.tabs a.active {
+  color: var(--ink);
+  font-weight: 500;
+  border-bottom-color: var(--signal);
+}
+
+/* ============================================================
+   PAGE GRID
+   Prose holds a 66ch measure; figures and tables break out wider.
+   ============================================================ */
+
+/* The prose column is left-aligned with the masthead rather than centred,
+   so the page has one consistent left edge from the title down. Figures and
+   tables extend past the measure to the right, which is what makes the data
+   read as structural instead of inset. */
+main {
+  display: grid;
+  grid-template-columns:
+    [text-start] min(var(--measure), 100%)
+    [text-end] minmax(0, 1fr)
+    [wide-end];
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--s8) var(--gutter) var(--s9);
+  row-gap: 0;
+}
+
+main > * {
+  grid-column: text-start / text-end;
+  min-width: 0;
+}
+
+main > figure,
+main > .table-wrap,
+main > .figure-grid {
+  grid-column: text-start / wide-end;
+}
+
+/* ============================================================
+   TEXT
+   ============================================================ */
 
 h2 {
-  font-size: clamp(23px, 2.7vw, 28px);
-  line-height: 1.24;
-  letter-spacing: -0.014em;
-  margin: 58px 0 16px;
-  padding-bottom: 10px;
+  font-family: var(--serif);
+  font-size: clamp(25px, 3vw, 31px);
   font-weight: 600;
-  border-bottom: 1px solid var(--line);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+  margin: var(--s8) 0 var(--s4);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--rule);
 }
 
-main > h2:first-child { margin-top: 0; }
+main > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
 
 h3 {
-  font-size: 19.5px;
-  line-height: 1.34;
-  letter-spacing: -0.006em;
-  margin: 38px 0 11px;
+  font-family: var(--serif);
+  font-size: 21px;
   font-weight: 600;
+  line-height: 1.32;
+  margin: var(--s6) 0 var(--s3);
 }
 
-p { margin: 0 0 18px; }
-
-main p { max-width: 74ch; }
+p { margin: 0 0 var(--s5); }
 
 a {
-  color: var(--accent);
+  color: var(--ink);
+  text-decoration-color: var(--signal);
   text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-a:hover { color: var(--accent-bright); }
+a:hover { color: var(--signal); }
+
+a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
 
 code {
-  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.83em;
-  background: var(--surface-sunk);
-  border: 1px solid var(--line-soft);
-  border-radius: 5px;
-  padding: 1.5px 6px;
+  font-family: var(--mono);
+  font-size: 0.84em;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule-faint);
+  padding: 1px 5px;
   word-break: break-all;
 }
 
-/* --- reusable blocks ---------------------------------------- */
+/* --- lede: the one place type runs large -------------------- */
 
 .lede {
-  font-size: clamp(19px, 2vw, 21px);
-  line-height: 1.58;
-  color: var(--ink-soft);
-  border-left: 3px solid var(--accent);
-  padding-left: 20px;
-  margin-bottom: 38px;
-  max-width: 68ch;
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.4vw, 24px);
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0 0 var(--s7);
+  max-width: 54ch;
 }
+
+/* --- callout: a rule, not a box ----------------------------- */
 
 .callout {
-  background: var(--accent-soft);
-  border: 1px solid #f0dcc9;
-  border-left: 4px solid var(--accent);
-  border-radius: 0 var(--r-inner) var(--r-inner) 0;
-  padding: 18px 22px;
-  margin: 30px 0;
+  border-left: 2px solid var(--signal);
+  padding: var(--s1) 0 var(--s1) var(--s5);
+  margin: var(--s6) 0;
 }
 
-.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+.callout p:last-child,
+.callout ul:last-child { margin-bottom: 0; }
 
 .placeholder {
-  background: var(--surface-sunk);
-  border: 1px dashed #c6d0db;
-  border-radius: var(--r-outer);
-  padding: 32px 28px;
-  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: var(--s5) 0;
+  color: var(--graphite);
 }
 
 .placeholder p:last-child { margin-bottom: 0; }
 
 blockquote {
-  margin: 30px 0;
-  padding: 6px 0 6px 24px;
-  border-left: 3px solid var(--accent);
-  font-size: clamp(19px, 2vw, 21px);
-  line-height: 1.55;
-  letter-spacing: -0.004em;
-  color: var(--navy);
+  margin: var(--s6) 0;
+  padding-left: var(--s5);
+  border-left: 2px solid var(--rule);
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.3vw, 23px);
   font-style: italic;
+  line-height: 1.45;
+  color: var(--ink);
 }
 
 blockquote p:last-child { margin-bottom: 0; }
 
+/* --- lists -------------------------------------------------- */
+
 ol.questions {
-  padding-left: 26px;
-  max-width: 74ch;
+  padding-left: var(--s5);
+  margin: 0 0 var(--s5);
 }
 
 ol.questions li {
-  margin-bottom: 13px;
-  padding-left: 4px;
+  margin-bottom: var(--s3);
+  padding-left: var(--s2);
 }
 
 ol.questions li::marker {
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--graphite);
+  font-family: var(--sans);
+  font-size: 0.82em;
 }
 
-main ul { max-width: 74ch; }
-main ul li { margin-bottom: 7px; }
+main ul { padding-left: var(--s5); margin: 0 0 var(--s5); }
+main ul li { margin-bottom: var(--s2); }
+main ul li::marker { color: var(--graphite); }
 
-/* --- figures: elevated, but never glass --------------------- */
+/* ============================================================
+   FIGURES - the structural element of the site
+   ============================================================ */
 
 figure {
-  margin: 40px 0;
+  margin: var(--s8) 0;
   padding: 0;
 }
 
@@ -324,116 +330,127 @@ figure img {
   width: 100%;
   height: auto;
   display: block;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-outer);
-  box-shadow: var(--lift-1);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-figure:hover img {
-  box-shadow: var(--lift-2);
-  transform: translateY(-2px);
+  background: var(--paper);
+  border: 1px solid var(--rule);
 }
 
 figure figcaption {
-  font-family: var(--ui);
+  font-family: var(--sans);
   font-size: 14.5px;
-  line-height: 1.62;
-  color: var(--ink-soft);
-  margin-top: 13px;
-  padding-left: 15px;
-  border-left: 2px solid var(--line);
-  max-width: 78ch;
+  line-height: 1.6;
+  color: var(--graphite);
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+  max-width: 80ch;
 }
 
-figure figcaption b { color: var(--ink); font-weight: 600; }
+/* The bold clause is the figure's name - a scientific-publishing
+   convention that carries structure, not emphasis for its own sake. */
+figure figcaption b {
+  color: var(--ink);
+  font-weight: 600;
+}
 
 .figure-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--s7);
 }
 
 .figure-grid figure { margin: 0; }
 
-/* --- tables ------------------------------------------------- */
+/* ============================================================
+   TABLES
+   ============================================================ */
 
 .table-wrap {
   overflow-x: auto;
-  margin: 30px 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r-outer);
-  box-shadow: var(--lift-1);
-  background: var(--surface);
+  margin: var(--s7) 0;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
 }
 
 table {
   border-collapse: collapse;
   width: 100%;
-  font-family: var(--ui);
-  font-size: 14.5px;
+  font-family: var(--sans);
+  font-size: 15px;
 }
 
 th, td {
-  padding: 11px 16px;
+  padding: var(--s3) var(--s4) var(--s3) 0;
   text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--rule-faint);
 }
 
 th {
-  background: var(--surface-sunk);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.032em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+  font-size: 14px;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
   white-space: nowrap;
 }
 
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: #fafbfc; }
+td { color: var(--graphite); }
+td:first-child { color: var(--ink); }
 
-/* --- footer ------------------------------------------------- */
+tbody tr:last-child td { border-bottom: none; }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
 
 footer {
-  border-top: 1px solid var(--line);
-  background: var(--surface-sunk);
-  padding: 30px 20px;
+  border-top: 1px solid var(--rule);
+  padding: var(--s7) 0 var(--s8);
 }
 
-footer div {
-  max-width: var(--max);
-  margin: 0 auto;
-  font-family: var(--ui);
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: var(--ink-soft);
+footer .wrap {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--graphite);
+  max-width: 1120px;
 }
+
+footer p { margin: 0 0 var(--s2); max-width: 70ch; }
+footer p:last-child { margin-bottom: 0; }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 
+@media (max-width: 900px) {
+  main > figure,
+  main > .table-wrap,
+  main > .figure-grid {
+    grid-column: text-start / text-end;
+  }
+}
+
 @media (max-width: 640px) {
+  :root { --gutter: 18px; }
   body { font-size: 17.5px; }
-  .masthead { padding-top: 26px; }
-  .masthead .byline { margin-bottom: 20px; }
-  nav.tabs a { font-size: 12.5px; padding: 7px 12px; }
-  main { padding: 38px 16px 64px; }
-  h2 { margin-top: 44px; }
-  figure { margin: 30px 0; }
-  th, td { padding: 9px 12px; }
+  html { scroll-padding-top: 60px; }
+
+  .masthead { padding: var(--s7) 0 var(--s5); }
+  .masthead h1 { max-width: none; }
+
+  nav.tabs .wrap { gap: var(--s4); }
+  nav.tabs a { font-size: 14px; padding: 14px 0 12px; }
+
+  main { padding: var(--s7) var(--gutter) var(--s8); }
+  h2 { margin-top: var(--s7); }
+  figure { margin: var(--s7) 0; }
+  th, td { padding-right: var(--s3); }
 }
 
 /* ============================================================
-   ACCESSIBILITY
-   Liquid Glass gets these free at the system level; on the web
-   they have to be written out.
+   QUALITY FLOOR
    ============================================================ */
 
-/* Reduced Motion decreases lensing and elastic effects. */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -441,30 +458,24 @@ footer div {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  figure:hover img { transform: none; }
 }
 
-/* Increased Contrast renders glass solid, with a contrasting border. */
 @media (prefers-contrast: more) {
   :root {
-    --ink-soft: #2d3c4d;
-    --line: #9aa8b8;
+    --graphite: #35424d;
+    --rule: #8c98a4;
+    --rule-faint: #b4bec8;
   }
-  nav.tabs {
-    background: var(--navy-deep);
-    border-color: #ffffff;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  nav.tabs a { color: #ffffff; }
-  nav.tabs a.active { background: var(--accent); box-shadow: none; }
-  figure img, .table-wrap { box-shadow: none; border-color: #6b7c8f; }
-  .masthead::before, .masthead::after { display: none; }
 }
 
 @media print {
-  .masthead, footer { background: #fff !important; color: #000 !important; }
   nav.tabs { display: none; }
-  figure img, .table-wrap { box-shadow: none; }
-  a { color: #000; }
+  .masthead { border-bottom: 1px solid #000; }
+  a { color: #000; text-decoration: none; }
+  figure { break-inside: avoid; }
+  main {
+    display: block;
+    max-width: none;
+    padding: 0;
+  }
 }

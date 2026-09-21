@@ -34,26 +34,32 @@ TEMPLATE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title} | Vehicle Safety Project</title>
 <meta name="description" content="{desc}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <header class="masthead">
-  <div class="masthead-inner">
-    <p class="course">CSCI 5612 &middot; Machine Learning &middot; Project</p>
+  <div class="wrap">
+    <p class="course">Rajeshwar Rengeswaran, CSCI 5612 Machine Learning</p>
     <h1>Rated Safe, Reported Broken</h1>
     <p class="byline">What crash-test scores miss about how vehicles actually fail</p>
-    <nav class="tabs">
-{nav}
-    </nav>
   </div>
 </header>
+<nav class="tabs" aria-label="Project sections">
+  <div class="wrap">
+{nav}
+  </div>
+</nav>
 <main>
 {body}
 </main>
-<footer><div>
-  CSCI 5612 project website &middot; Rajeshwar Rengeswaran &middot;
-  Data: <a href="https://www.nhtsa.gov/">U.S. National Highway Traffic Safety Administration</a> &middot;
-  <a href="{repo}">Project code and data repository</a>
+<footer><div class="wrap">
+  <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>
+  <p>Data published by the <a href="https://www.nhtsa.gov/">U.S. National Highway
+  Traffic Safety Administration</a>. All code and data for this project are public at
+  <a href="{repo}">github.com/Rajeshwar987/csci5612-project</a>.</p>
 </div></footer>
 </body>
 </html>
