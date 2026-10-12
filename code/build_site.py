@@ -207,6 +207,30 @@ and the ownership record agree, where they diverge, and which kinds of vehicles
 sit in the gap between them would help buyers read a window sticker more
 accurately, and would help regulators decide where to look next.</p>
 
+<p>There is also a timing problem buried in how this information reaches people.
+A crash-test score is fixed at launch, published before a single example has
+been sold, and it never changes afterwards. The ownership record moves in the
+opposite direction: it is empty on the day the rating appears and accumulates
+for as long as the vehicle stays on the road. The two therefore cross over at
+some point in a vehicle's life, after which the score describes a machine that
+no longer resembles the one being bought. This matters most for used vehicles,
+which account for the large majority of cars changing hands, and which are
+bought by people with the least money to absorb a serious fault. A buyer
+comparing two eight-year-old vehicles is handed a number earned when both were
+new, while the record of what actually went wrong with them sits in a federal
+database that almost nobody consults. The gap is not that the rating is wrong.
+It is that the rating is old, and the thing that has aged alongside the vehicle
+is never shown next to it.</p>
+
+<figure>
+  <img src="assets/img/crashtest_pole.jpg"
+       alt="A vehicle positioned against a rigid pole for a side-impact crash test">
+  <figcaption><b>A side-pole impact test.</b> A vehicle is pulled sideways into a
+  narrow rigid pole, concentrating the entire force of the collision into a
+  single point beside the driver. Photograph by the U.S. National Highway Traffic
+  Safety Administration, a public-domain federal work.</figcaption>
+</figure>
+
 <h2>Ten questions this project sets out to answer</h2>
 <ol class="questions">
   <li>Does a higher crash-test star rating correspond to fewer safety complaints
@@ -513,6 +537,469 @@ that went wrong. The modelling modules that follow will test whether these
 patterns survive more careful treatment.</p>
 """
 
+CLUSTERING = f"""<h2>Clustering</h2>
+
+<p class="lede">Crash-test ratings sort vehicles into five stars. This section
+ignores that sorting entirely and asks a different question: if the only thing
+known about a vehicle were its measured safety record, what groups would the
+data put it in on its own?</p>
+
+<h2>Overview</h2>
+
+<p>Clustering is unsupervised learning. Nothing is labelled, nothing is being
+predicted, and the algorithm is never told what a good answer looks like. It
+receives a set of points described by numbers and is asked to find points that
+sit close together. What "close" means has to be defined before anything can
+happen, which is why a distance metric is the first decision rather than a
+detail, and why the same data can produce different groupings under different
+definitions of distance. The value of the exercise is that any structure found
+is a property of the measurements themselves, not an artefact of categories
+that a human imposed beforehand.</p>
+
+<p>Two families of algorithm are used here. <b>Partitional</b> clustering, of
+which k-means is the standard example, demands the number of groups in advance.
+It places k centres, assigns each vehicle to the nearest one, moves each centre
+to the mean of the vehicles that chose it, and repeats until nothing moves.
+It is fast and it always returns exactly k groups, but it has to be told k,
+it assumes groups are roughly round and comparable in size, and it can settle
+into a poor arrangement depending on where the centres started.
+<b>Hierarchical</b> clustering makes no such demand. Every vehicle begins as
+its own cluster and the two closest clusters are merged repeatedly until one
+remains, recording the entire sequence as a tree. The number of groups is
+chosen afterwards by cutting that tree at a chosen height, which means a single
+run shows the structure at every possible resolution at once.</p>
+
+{figure("concept_clustering_types.png",
+        "Two ways of forming groups",
+        "k-means commits to a fixed number of groups and assigns every point to "
+        "exactly one of them, shown here with the cluster centres marked. "
+        "Hierarchical clustering instead records every merge as a tree, leaving "
+        "the number of groups to be chosen afterwards by cutting it.")}
+
+<p>The distance metric matters more than it first appears. <b>Euclidean
+distance</b> is ordinary straight-line distance and is what k-means minimises;
+it responds to magnitude, so a vehicle with large values on many measures sits
+far from one with small values. <b>Cosine distance</b> is one minus the cosine
+of the angle between two vehicles treated as vectors, and it measures whether
+two records have the same <i>shape</i> regardless of magnitude. The assignment
+specifies cosine for the hierarchical clustering, and that choice fits the
+question: it groups vehicles whose safety measures rise and fall together, so
+a heavily complained-about model and a lightly complained-about one can land
+together if their problems are proportionally alike. Running the two methods
+under two different definitions of distance is also a check. Groups that
+survive both are structural; groups that appear under only one are an artefact
+of the metric.</p>
+
+{figure("concept_distance_metrics.png",
+        "What the two distance metrics measure",
+        "Euclidean distance is the length of the line between two points and "
+        "therefore grows with magnitude. Cosine distance measures only the angle "
+        "between the directions, so two vehicles with proportionally similar "
+        "safety profiles are close even when one has far more complaints.")}
+
+<p>The plan for discovery is to cluster on measured outcomes alone, then look
+at what the resulting groups turn out to contain. Body segment, manufacturer,
+model year and star rating are all removed before fitting and held back. If
+clusters built purely from complaint rates, recall counts and rollover figures
+turn out to align with segment or rating, that alignment was discovered rather
+than assumed. If they cut across those categories instead, the data is saying
+that the usual way of describing a vehicle is not the way its safety record
+behaves.</p>
+
+<h2>Data Prep</h2>
+
+<p>Clustering accepts <b>only unlabeled numeric data</b>. Every value must be a
+number, because distances cannot be computed on text, and no column may carry
+the answer, because an unsupervised method that can see a label is no longer
+unsupervised. The joined model-year table from Module 1 therefore cannot be
+used as it stands: it contains make, model, segment, the top complaint
+component, and two categorical bands, all of which are discarded here and held
+aside purely to interpret the result afterwards.</p>
+
+<p>Three further preparation steps were necessary:</p>
+<ul>
+  <li><b>Raw counts were dropped.</b> Crash, fire, injury and death counts all
+      scale with complaint volume. Keeping them would have let fleet size
+      dominate every distance in the calculation, so the rates derived from them
+      were kept instead.</li>
+  <li><b>Skewed counts were log-transformed.</b> Complaint volume, recalls and
+      investigations span three orders of magnitude. Without a log transform the
+      handful of very high-volume vehicles would set the geometry for everyone
+      else.</li>
+  <li><b>Every feature was standardised</b> to mean 0 and standard deviation 1.
+      This is not optional. The features arrive on wildly different scales, and
+      an unscaled star rating running 1 to 5 would be overwhelmed by a
+      complaint count running into the hundreds purely because of its units.</li>
+</ul>
+
+<p>The result is a matrix of <b>229 vehicles by 16 numeric features</b>, with no
+labels of any kind.</p>
+
+{figure("sample_clustering_input.png",
+        "The exact matrix passed to both algorithms",
+        "Every column is numeric and no column identifies the vehicle, its "
+        "segment or its rating. This is the complete input: the algorithms see "
+        "nothing else.")}
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Clustering input matrix:
+  <a href="{RAW_GH}/data/clean/clustering_sample.csv">clustering_sample.csv</a> &middot;
+  Resulting labels joined back to each vehicle:
+  <a href="{RAW_GH}/data/clean/cluster_assignments.csv">cluster_assignments.csv</a> &middot;
+  Silhouette sweep:
+  <a href="{RAW_GH}/data/clean/kmeans_silhouette_sweep.csv">kmeans_silhouette_sweep.csv</a></p>
+  <p>Code: <a href="{BLOB}/code/clustering_analysis.py">clustering_analysis.py</a>
+  &mdash; Python, using scikit-learn for k-means and silhouette scoring and
+  SciPy for the cosine-distance hierarchical linkage and dendrogram.</p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is written in Python in a single script,
+<a href="{BLOB}/code/clustering_analysis.py">clustering_analysis.py</a>. k-means
+comes from <code>sklearn.cluster.KMeans</code>, run with 25 random restarts at
+each k so the reported solution is not an unlucky initialisation. Hierarchical
+clustering uses <code>scipy.cluster.hierarchy.linkage</code> on a condensed
+<code>pdist</code> matrix computed with <code>metric="cosine"</code>. Average
+linkage is used because Ward's method, the more common default, is defined only
+for squared Euclidean distance and cannot be combined with cosine at all.
+Silhouette scores come from <code>sklearn.metrics</code>, computed on the
+precomputed cosine distance matrix for the hierarchical solutions so that each
+method is scored under its own metric rather than a borrowed one.</p>
+
+<h2>Results</h2>
+
+<h3>Choosing k</h3>
+
+<p>k-means was run for every k from 2 to 15 and scored by mean silhouette width,
+which measures how much closer each vehicle sits to its own cluster than to the
+next nearest one. The naive approach is to take the highest score, and here that
+would have been actively misleading: the curve keeps drifting upward as k grows,
+and the nominal maximum fell at k = 15, the edge of the tested range, where the
+smallest cluster contained three vehicles. That rising pattern is the signature
+of a dataset with no clean separation. The algorithm is slicing a continuum into
+ever smaller pieces, and smaller pieces always look tidier.</p>
+
+<p>Two corrections were applied. For k-means, only interior local maxima of the
+curve were treated as candidates, which gave k = 7, 10 and 13. For the
+hierarchical solutions, any k producing a singleton cluster was discarded before
+reading off the peak, because a cluster of one vehicle has a silhouette width of
+1 by definition and rewards the algorithm for stranding outliers. After those
+corrections both methods point to the same answer independently: <b>k = 7</b> is
+a local maximum for k-means at 0.225 and the global maximum for cosine-based
+hierarchical clustering at 0.304.</p>
+
+{figure("fig17_silhouette_by_k.png",
+        "Silhouette score against k for both methods",
+        "Both curves are low in absolute terms, peaking near 0.3 where values "
+        "above 0.5 would indicate clean separation. The hierarchical curve under "
+        "cosine distance sits consistently above the Euclidean k-means curve, "
+        "and both identify k = 7.")}
+
+{figure("fig18_silhouette_widths.png",
+        "Per-vehicle silhouette widths at k = 7",
+        "Each horizontal bar is one vehicle, grouped by cluster and sorted "
+        "within it. Several clusters contain vehicles with negative widths, "
+        "meaning those vehicles sit closer to a neighbouring cluster than to "
+        "their own, which is the visual signature of overlapping groups.")}
+
+<h3>Comparing three values of k</h3>
+
+{figure("fig19_kmeans_k_comparison.png",
+        "k-means at k = 3, k = 5 and k = 7, drawn in the plane of the first two principal components",
+        "At k = 3 the algorithm splits the cloud into three broad slabs and "
+        "scores worst, at 0.176. Moving to k = 7 isolates the small, genuinely "
+        "distinct groups at the edges of the distribution, which is where the "
+        "improvement in score comes from.")}
+
+<h3>The hierarchical tree</h3>
+
+{figure("fig20_dendrogram.png",
+        "The full hierarchical tree under cosine distance",
+        "Every one of the 229 vehicles enters at the bottom and merges upward "
+        "until a single cluster remains. The red line marks the cut at k = 7, "
+        "and the uneven branch widths show that the groups differ considerably "
+        "in size.")}
+
+{figure("fig20b_dendrogram_truncated.png",
+        "The same tree truncated to its final 20 merges",
+        "Collapsing the lower branches makes the top of the tree readable, with "
+        "each leaf annotated by the number of vehicles beneath it. Reading the "
+        "largest vertical gap excluding the root merge suggests a cut at k = 6, "
+        "one below the silhouette answer.")}
+
+<h3>Do the two methods agree?</h3>
+
+{figure("fig21_kmeans_vs_hclust.png",
+        "Agreement between the k-means and hierarchical solutions",
+        "Each cell counts vehicles assigned to a given pair of clusters by the "
+        "two methods. An adjusted Rand index of 0.638 indicates substantial but "
+        "incomplete agreement, which is notable given that the methods use "
+        "different distance metrics and entirely different procedures.")}
+
+<h3>What the clusters contain</h3>
+
+{figure("fig22_cluster_profiles.png",
+        "What distinguishes each cluster",
+        "Each cell is a cluster's mean on one standardised feature, so values "
+        "read as standard deviations from the fleet average. Reading across a "
+        "row gives that cluster's character, and the strongest colours mark the "
+        "measures that set it apart.")}
+
+<p>Labelling the seven groups by what actually separates them, with segment
+composition checked only after fitting:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Cluster</th><th>n</th><th>What defines it</th><th>What it turned out to contain</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>10</td><td>Extreme regulatory attention: 18 recalls and 10 investigations on average, roughly ten times the fleet norm, with the lowest rollover probability and full driver-assistance fitment</td><td>7 of 10 are electric</td></tr>
+    <tr><td>2</td><td>63</td><td>Oldest vehicles, highest complaint volume, lowest crash rate, and almost no driver assistance</td><td>Mixed: SUVs, sedans, minivans</td></tr>
+    <tr><td>3</td><td>36</td><td>Highest rollover probability (0.18) and lowest crash-test ratings (4.1 stars)</td><td>Entirely trucks and large SUVs</td></tr>
+    <tr><td>4</td><td>14</td><td>Fire rate of 6.5%, roughly five times every other cluster, and the slowest reporting at 23 days</td><td>Luxury-weighted, mixed</td></tr>
+    <tr><td>5</td><td>75</td><td>Newest vehicles, universal collision and lane warning, near-perfect ratings, moderate everything else</td><td>The mainstream modern fleet</td></tr>
+    <tr><td>6</td><td>26</td><td>Highest crash rate (19%) and highest injury rate (14.5 per 100 complaints) on low complaint volume</td><td>Sedan and hybrid weighted</td></tr>
+    <tr><td>7</td><td>5</td><td>The only group rated 4 stars overall and 4 on rollover, with no driver assistance</td><td>Four sedans and one electric</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Conclusions</h2>
+
+<p>The clearest result is that the groups are real but weak. Silhouette widths
+peaking around 0.3, with visibly negative values for individual vehicles, say
+that vehicle safety records form a <b>continuum rather than a set of distinct
+types</b>. That is a substantive answer to the question this project asks, not
+a failed analysis. There is no natural population of "dangerous cars" sitting
+apart from a population of "safe cars"; vehicles shade into one another, which
+is precisely why a five-point star rating struggles to separate them.</p>
+
+<p>Where structure does exist, it is organised by <b>physics and equipment
+rather than by brand</b>. The cleanest group in the entire solution is cluster
+3, which contains trucks and large SUVs and nothing else, and which the
+algorithm identified without ever being shown a body style. It was separated by
+rollover probability and crash-test score alone. Cluster 5 is likewise defined
+by universal driver-assistance fitment and recent model years. Vehicle height
+and the equipment fitted turn out to shape the safety record far more than the
+manufacturer does.</p>
+
+<p>Two groups complicate the picture in ways worth carrying into later modules.
+Cluster 6 has the highest crash and injury rates in the fleet on low complaint
+volume, while cluster 2 has the highest complaint volume and the lowest crash
+rate. <b>Complaint volume and complaint severity are close to opposites.</b>
+The models people complain about most are not the models whose complaints
+describe the worst outcomes, which means any future prediction built on volume
+alone would point in the wrong direction.</p>
+
+<p>Finally, the two methods agreeing at an adjusted Rand index of 0.638 while
+using different distance metrics is reassuring about the groups that survived
+both. The agreement is substantial but incomplete, and the disagreements fall
+where the continuum is densest, exactly where a borderline vehicle could
+reasonably be placed either way.</p>
+"""
+
+PCA_TAB = f"""<h2>Principal Component Analysis</h2>
+
+<p class="lede">Sixteen separate safety measures describe each vehicle. The
+question here is whether they are really sixteen different things, or a handful
+of underlying patterns wearing sixteen names.</p>
+
+<h2>Overview</h2>
+
+<p>Principal Component Analysis takes a set of correlated measurements and
+rebuilds them as a new set of axes that are uncorrelated with one another and
+ordered by how much of the data's variation each one carries. The first
+principal component is the single direction through the data along which the
+points are most spread out. The second is the direction of greatest remaining
+spread that is perpendicular to the first, and so on. Each component is a
+weighted blend of all the original variables, with the weights, called
+loadings, saying how much each original measure contributes. Nothing is thrown
+away in the rotation itself. The reduction happens afterwards, when the later
+components, which carry little variation, are discarded.</p>
+
+<p><b>Eigenvalues and eigenvectors</b> sit underneath all of this. For the
+correlation matrix of the standardised data, an eigenvector is a direction that
+the matrix stretches without rotating, and its eigenvalue is how much stretching
+occurs. Translated into data terms, the eigenvectors are the candidate axes and
+the eigenvalues are the variance captured along each. Sorting the eigenvectors
+by their eigenvalues produces the principal components in order of importance,
+which is the whole mechanism. Because the input was standardised, each original
+variable contributes exactly 1 unit of variance, so an eigenvalue above 1 marks
+a component carrying more information than any single original measure did on
+its own.</p>
+
+{figure("concept_pca_projection.png",
+        "What the eigenvectors are, and what projection does",
+        "The first eigenvector points along the direction in which the cloud is "
+        "most stretched and the second lies perpendicular to it. Projecting every "
+        "point onto the first axis alone collapses two dimensions into one while "
+        "preserving most of the original spread.")}
+
+<p><b>Dimensionality reduction</b> matters for three practical reasons. Visual
+inspection is limited to two or three dimensions, so a sixteen-dimensional
+dataset cannot be looked at directly without some projection. Many algorithms
+degrade as dimensions grow, because in high-dimensional space the distance to
+the nearest point and the distance to the furthest point converge, so "nearest"
+stops carrying much meaning, and distance-based methods such as the clustering
+in the previous section rest entirely on that meaning. And the data required to
+cover a space grows exponentially with its dimension, so a sample that
+comfortably describes two variables is sparse across sixteen. Correlated
+variables also make models unstable, since the model cannot tell which of two
+measures that move together is responsible for an effect.</p>
+
+{figure("concept_dimensionality.png",
+        "Why high-dimensional data is difficult",
+        "As dimensions increase, the ratio between the closest and furthest pair "
+        "of points climbs toward 1, so every point becomes roughly equidistant "
+        "from every other. The sample size needed to maintain the same coverage "
+        "grows exponentially alongside it.")}
+
+<h2>Data Prep</h2>
+
+<p>PCA needs the same input shape as clustering: a <b>purely numeric matrix with
+no labels</b>. The same 16 features and the same 229 vehicles are used, prepared
+identically, so that the two sections are directly comparable. Standardisation
+is even more important here than it was for clustering. PCA finds directions of
+maximum variance, and variance depends on units, so an unstandardised variable
+with a wide numeric range would capture the first component purely by being
+measured on a larger scale. Standardising every column to mean 0 and standard
+deviation 1 means the analysis runs on the correlation matrix rather than the
+covariance matrix, and every variable gets an equal vote.</p>
+
+{figure("sample_pca_input.png",
+        "The standardised matrix passed to PCA",
+        "Every value is now expressed in standard deviations from that column's "
+        "mean, so positive and negative values appear throughout and no column "
+        "can dominate through its units. The matrix has mean 0 and standard "
+        "deviation 1 overall.")}
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  PCA input: <a href="{RAW_GH}/data/clean/pca_sample.csv">pca_sample.csv</a> &middot;
+  Eigenvalues: <a href="{RAW_GH}/data/clean/pca_eigenvalues.csv">pca_eigenvalues.csv</a> &middot;
+  Loadings: <a href="{RAW_GH}/data/clean/pca_components.csv">pca_components.csv</a> &middot;
+  Vehicle scores: <a href="{RAW_GH}/data/clean/pca_scores.csv">pca_scores.csv</a></p>
+  <p>Code: <a href="{BLOB}/code/pca_analysis.py">pca_analysis.py</a> &mdash;
+  Python, using <code>sklearn.decomposition.PCA</code> with
+  <code>StandardScaler</code>.</p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is in <a href="{BLOB}/code/pca_analysis.py">pca_analysis.py</a>.
+<code>StandardScaler</code> centres and scales the matrix, then
+<code>sklearn.decomposition.PCA</code> is fitted with all components retained so
+the full eigenvalue spectrum is available for the scree plot. Eigenvalues are
+read from <code>explained_variance_</code> and the eigenvectors from
+<code>components_</code>. The correlation circle multiplies each loading by the
+square root of its eigenvalue, which converts loadings into correlations between
+the original variable and the component and is what bounds every arrow inside
+the unit circle.</p>
+
+<h2>Results</h2>
+
+<h3>How much structure is there?</h3>
+
+{figure("fig23_scree.png",
+        "Variance carried by each principal component",
+        "The first component accounts for 24.2% of the total variance and the "
+        "second for 14.8%. The curve declines gently rather than dropping off a "
+        "cliff, which means there is no small set of components that captures "
+        "almost everything.")}
+
+{figure("fig24_eigenvalues.png",
+        "Eigenvalues of the correlation matrix",
+        "Six components have eigenvalues above 1, meaning each carries more "
+        "variance than any single original variable contributed. Under the Kaiser "
+        "criterion those six are worth retaining and the remaining ten are not.")}
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Measure</th><th>Result</th><th>Reading</th></tr></thead>
+  <tbody>
+    <tr><td>Variance in PC1</td><td>24.2%</td><td>No single dominant pattern</td></tr>
+    <tr><td>Variance in PC1 + PC2</td><td>39.0%</td><td>A two-dimensional plot shows well under half the picture</td></tr>
+    <tr><td>Eigenvalues above 1</td><td>6</td><td>Six components beat a single original variable</td></tr>
+    <tr><td>Components for 90% variance</td><td>9 of 16</td><td>Only a 44% reduction in dimensions</td></tr>
+    <tr><td>Components for 95% variance</td><td>12 of 16</td><td>Compression is poor</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>What the components mean</h3>
+
+{figure("fig25_loadings.png",
+        "How each original variable builds each component",
+        "Reading down a column shows what that component is made of, with "
+        "positive and negative loadings pulling in opposite directions. PC1 sets "
+        "complaint volume and vehicle age against crash rate and driver-assistance "
+        "fitment; PC2 sets crash-test ratings against realised harm.")}
+
+{figure("fig26_correlation_circle.png",
+        "How each variable relates to the first two components",
+        "Arrows pointing the same way are correlated, opposite directions are "
+        "inversely related, and right angles mean unrelated. The severity cluster "
+        "at upper right and the star-rating cluster at lower right sit nearly "
+        "perpendicular to the complaint-volume arrow on the left.")}
+
+<p>Reading the two leading components:</p>
+<ul>
+  <li><b>PC1 (24.2%) separates an older, high-volume, unassisted fleet from a
+      newer, assisted one with a higher per-complaint harm rate.</b> Complaint
+      volume (&minus;0.36), vehicle age (&minus;0.33) and recalls (&minus;0.23)
+      load negatively, while crash rate (+0.37), severe share (+0.37) and the two
+      driver-assistance indicators (+0.34, +0.33) load positively. It is
+      essentially an age-and-exposure axis.</li>
+  <li><b>PC2 (14.8%) sets laboratory ratings directly against real-world
+      harm.</b> Overall stars (&minus;0.33), front-crash stars (&minus;0.32) and
+      rollover stars (&minus;0.32) oppose severe share (+0.35), injuries per 100
+      (+0.34) and crash rate (+0.30). This component is the central question of
+      the whole project rendered as a single axis.</li>
+</ul>
+
+{figure("fig27_pca_projection_clusters.png",
+        "The seven clusters projected onto the first two components",
+        "The clusters were fitted on all 16 dimensions, so their separation here "
+        "is evidence that two components retain genuine structure. The truck and "
+        "large-SUV group and the high-severity group occupy clearly different "
+        "regions, while the two largest clusters overlap substantially.")}
+
+<h2>Conclusions</h2>
+
+<p>The most informative result is a negative one. <b>This data does not reduce
+well.</b> Nine of the sixteen components are needed to retain 90% of the
+variance, and the leading component carries under a quarter of it. For
+comparison, a dataset with strong underlying structure often puts 60&ndash;80%
+into its first two or three components. The sixteen safety measures are
+therefore close to sixteen genuinely separate pieces of information, not a few
+latent factors in disguise. That has a direct practical consequence: there is no
+small number of hidden dimensions that a safety score could summarise, which
+helps explain why a single star rating leaves so much unsaid.</p>
+
+<p>The second component is the more pointed finding. It loads crash-test ratings
+against realised harm with opposite signs, meaning the laboratory measurement
+and the ownership record are <b>not merely different, they vary in opposition</b>
+along the strongest axis on which both appear. In the correlation circle the
+star-rating arrows and the severity arrows sit nearly perpendicular to complaint
+volume and point away from each other. This is the Module 1 observation of a
+weak correlation between star rating and complaint measures, now shown as
+geometry rather than a single coefficient.</p>
+
+<p>PCA and clustering also corroborate each other. The seven clusters, fitted on
+all sixteen dimensions, remain visibly separated when projected onto just two
+components, which is evidence that the structure found earlier is real rather
+than an artefact of the distance metric. Equally, the fact that those clusters
+overlap in the centre of the projection matches the weak silhouette scores: both
+methods, by different routes, describe a dense continuum with distinctive
+behaviour only at the edges.</p>
+
+<p>For the supervised modules that follow, the practical implication is that
+aggressive dimensionality reduction would discard real information. Retaining
+six components on the Kaiser criterion, or nine for 90% of the variance, is
+defensible; compressing to two or three for convenience would not be.</p>
+"""
+
 CONCLUSIONS = """<h2>Conclusions</h2>
 <p class="lede">This section closes the project's story in plain language, without
 technical vocabulary, once all the analysis is complete.</p>
@@ -579,22 +1066,12 @@ PAGES = {
     "dataprep_eda.html": ("DataPrep_EDA",
                           "Gathering, cleaning and exploring four federal vehicle "
                           "safety datasets.", DATAPREP),
-    "clustering.html": ("Clustering", "Partitional and hierarchical clustering.",
-        stub("Clustering", 2,
-             "Grouping vehicles by their combined safety profile, rather than by "
-             "manufacturer or body style.",
-             "Partitional and hierarchical clustering will be applied to the joined "
-             "model-year table to test whether vehicles fall into natural safety "
-             "groupings, and whether those groupings correspond to anything a buyer "
-             "would recognise.")),
-    "pca.html": ("PCA", "Principal component analysis.",
-        stub("PCA", 2,
-             "Reducing many correlated safety measures to the few dimensions that "
-             "carry most of the variation.",
-             "Principal component analysis will be used to find which combinations "
-             "of complaint, recall and crash-test measures explain the most variance, "
-             "and whether laboratory and ownership measures load onto separate "
-             "components.")),
+    "clustering.html": ("Clustering",
+                        "k-means and cosine-distance hierarchical clustering of "
+                        "229 vehicles on their measured safety records.", CLUSTERING),
+    "pca.html": ("PCA",
+                 "Principal component analysis of sixteen vehicle safety measures, "
+                 "with eigenvalues, loadings and projections.", PCA_TAB),
     "naivebayes.html": ("NaiveBayes", "Naive Bayes classification.",
         stub("Naive Bayes", 3,
              "Predicting whether a reported problem turned into a crash, a fire, or "

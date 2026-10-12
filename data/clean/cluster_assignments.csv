@@ -1,0 +1,230 @@
+make,model,model_year,segment,top_component,rollover_risk_band,rating_class,kmeans_cluster,hclust_cluster
+audi,a4,2016,Luxury,ENGINE,Low (<10%),5-star,4,7
+audi,a4,2017,Luxury,AIR BAGS,Low (<10%),5-star,5,1
+audi,a4,2018,Luxury,ELECTRICAL SYSTEM,Low (<10%),5-star,4,1
+audi,a4,2020,Luxury,ELECTRICAL SYSTEM,Low (<10%),5-star,2,1
+audi,a4,2021,Luxury,ELECTRICAL SYSTEM,Low (<10%),5-star,6,2
+audi,a4,2024,Luxury,TIRES,Low (<10%),5-star,5,1
+bmw,3 series,2016,Luxury,ENGINE AND ENGINE COOLING,Low (<10%),5-star,4,7
+bmw,3 series,2017,Luxury,ENGINE,Low (<10%),5-star,2,6
+bmw,3 series,2018,Luxury,ENGINE,Low (<10%),5-star,4,7
+bmw,3 series,2019,Luxury,UNKNOWN OR OTHER,Low (<10%),5-star,4,7
+bmw,3 series,2021,Luxury,ELECTRICAL SYSTEM,Low (<10%),5-star,4,7
+bmw,3 series,2022,Luxury,TIRES,Low (<10%),5-star,6,2
+chevrolet,bolt,2018,Electric,STEERING,Low (<10%),5-star,2,6
+chevrolet,equinox,2016,SUV,ENGINE,Elevated (15-20%),4-star or below,3,5
+chevrolet,equinox,2017,SUV,ENGINE,Elevated (15-20%),4-star or below,3,5
+chevrolet,equinox,2018,SUV,SERVICE BRAKES,Elevated (15-20%),5-star,2,4
+chevrolet,equinox,2019,SUV,SERVICE BRAKES,Elevated (15-20%),5-star,2,6
+chevrolet,equinox,2020,SUV,SERVICE BRAKES,Elevated (15-20%),5-star,5,3
+chevrolet,equinox,2021,SUV,POWER TRAIN,Elevated (15-20%),5-star,5,3
+chevrolet,equinox,2022,SUV,FUEL/PROPULSION SYSTEM,Elevated (15-20%),5-star,5,3
+chevrolet,equinox,2023,SUV,FUEL/PROPULSION SYSTEM,Elevated (15-20%),5-star,5,3
+chevrolet,malibu,2016,Sedan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chevrolet,malibu,2017,Sedan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chevrolet,malibu,2018,Sedan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chevrolet,malibu,2019,Sedan,POWER TRAIN,Moderate (10-15%),4-star or below,7,4
+chevrolet,malibu,2020,Sedan,POWER TRAIN,Moderate (10-15%),4-star or below,7,4
+chevrolet,malibu,2021,Sedan,POWER TRAIN,Moderate (10-15%),4-star or below,7,4
+chevrolet,malibu,2022,Sedan,UNKNOWN OR OTHER,Moderate (10-15%),4-star or below,7,4
+chevrolet,malibu,2023,Sedan,BACK OVER PREVENTION,Moderate (10-15%),5-star,5,2
+chevrolet,malibu,2024,Sedan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,2
+chrysler,pacifica,2017,Minivan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chrysler,pacifica,2018,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+chrysler,pacifica,2019,Minivan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chrysler,pacifica,2020,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+chrysler,pacifica,2021,Minivan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chrysler,pacifica,2022,Minivan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+chrysler,pacifica,2023,Minivan,POWER TRAIN,Moderate (10-15%),5-star,5,3
+chrysler,pacifica,2024,Minivan,POWER TRAIN,Moderate (10-15%),5-star,5,3
+ford,explorer,2016,SUV,STRUCTURE,Elevated (15-20%),5-star,2,6
+ford,explorer,2017,SUV,STRUCTURE,Elevated (15-20%),5-star,2,6
+ford,explorer,2018,SUV,STRUCTURE,Elevated (15-20%),5-star,2,6
+ford,explorer,2019,SUV,STRUCTURE,Elevated (15-20%),5-star,2,6
+ford,explorer,2020,SUV,POWER TRAIN,Moderate (10-15%),5-star,1,1
+ford,explorer,2021,SUV,POWER TRAIN,Moderate (10-15%),5-star,2,1
+ford,explorer,2023,SUV,UNKNOWN OR OTHER,Moderate (10-15%),5-star,5,3
+ford,explorer,2024,SUV,UNKNOWN OR OTHER,Moderate (10-15%),5-star,5,3
+honda,accord,2016,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,2,6
+honda,accord,2017,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,2,6
+honda,accord,2018,Sedan,ENGINE,Low (<10%),5-star,1,1
+honda,accord,2019,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,1,1
+honda,accord,2020,Sedan,FORWARD COLLISION AVOIDANCE,Low (<10%),5-star,5,1
+honda,accord,2021,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+honda,accord,2022,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+honda,civic,2016,Sedan,STEERING,Low (<10%),5-star,2,6
+honda,civic,2017,Sedan,STEERING,Low (<10%),5-star,2,6
+honda,civic,2018,Sedan,STEERING,Low (<10%),5-star,2,6
+honda,civic,2019,Sedan,STEERING,Low (<10%),5-star,5,1
+honda,civic,2020,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+honda,civic,2021,Sedan,STEERING,Low (<10%),5-star,5,1
+honda,civic,2022,Sedan,STEERING,Low (<10%),5-star,5,1
+honda,cr-v,2016,SUV,UNKNOWN OR OTHER,Elevated (15-20%),5-star,2,6
+honda,cr-v,2017,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,2,6
+honda,cr-v,2018,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+honda,cr-v,2019,SUV,FORWARD COLLISION AVOIDANCE,Elevated (15-20%),5-star,2,6
+honda,cr-v,2020,SUV,FORWARD COLLISION AVOIDANCE,Elevated (15-20%),5-star,5,3
+honda,cr-v,2021,SUV,STEERING,Elevated (15-20%),5-star,5,3
+honda,cr-v,2022,SUV,STEERING,Elevated (15-20%),5-star,5,3
+honda,cr-v,2023,SUV,STEERING,Elevated (15-20%),5-star,5,3
+honda,cr-v,2024,SUV,STEERING,Elevated (15-20%),5-star,5,3
+honda,odyssey,2016,Minivan,ENGINE,Moderate (10-15%),5-star,2,6
+honda,odyssey,2017,Minivan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+honda,odyssey,2018,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+honda,odyssey,2019,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+honda,odyssey,2020,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+honda,odyssey,2021,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,3
+honda,odyssey,2022,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,3
+honda,odyssey,2023,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,3
+honda,odyssey,2024,Minivan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,3
+hyundai,sonata,2016,Sedan,ENGINE,Moderate (10-15%),5-star,2,6
+hyundai,sonata,2017,Sedan,ENGINE,Moderate (10-15%),5-star,2,6
+hyundai,sonata,2018,Sedan,ENGINE,Moderate (10-15%),5-star,2,6
+hyundai,sonata,2019,Sedan,ENGINE,Moderate (10-15%),5-star,2,6
+hyundai,sonata,2020,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+hyundai,sonata,2021,Sedan,UNKNOWN OR OTHER,Low (<10%),5-star,5,1
+hyundai,sonata,2022,Sedan,POWER TRAIN,Low (<10%),5-star,5,1
+hyundai,sonata,2023,Sedan,FUEL/PROPULSION SYSTEM,Low (<10%),5-star,5,1
+hyundai,sonata,2024,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+hyundai,tucson,2016,SUV,POWER TRAIN,Elevated (15-20%),5-star,2,6
+hyundai,tucson,2017,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+hyundai,tucson,2018,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+hyundai,tucson,2019,SUV,ENGINE,Elevated (15-20%),5-star,5,3
+hyundai,tucson,2020,SUV,ENGINE,Elevated (15-20%),5-star,5,3
+hyundai,tucson,2021,SUV,ENGINE,Elevated (15-20%),5-star,5,3
+hyundai,tucson,2022,SUV,FUEL/PROPULSION SYSTEM,Elevated (15-20%),4-star or below,3,5
+hyundai,tucson,2023,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,5,3
+hyundai,tucson,2024,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,5,3
+jeep,grand cherokee,2016,SUV,POWER TRAIN,Elevated (15-20%),5-star,3,5
+jeep,grand cherokee,2017,SUV,POWER TRAIN,Elevated (15-20%),5-star,3,5
+jeep,grand cherokee,2018,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),4-star or below,3,5
+jeep,grand cherokee,2019,SUV,SERVICE BRAKES,Elevated (15-20%),5-star,3,5
+jeep,grand cherokee,2020,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,3,5
+jeep,grand cherokee,2021,SUV,STEERING,Elevated (15-20%),5-star,3,5
+jeep,grand cherokee,2024,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,5,3
+kia,sorento,2016,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+kia,sorento,2017,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+kia,sorento,2018,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+kia,sorento,2019,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+kia,sorento,2020,SUV,ENGINE,Elevated (15-20%),5-star,4,7
+kia,sorento,2021,SUV,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+kia,sorento,2022,SUV,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+kia,sorento,2023,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),4-star or below,3,5
+kia,sorento,2024,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,6,2
+mazda,cx-5,2016,SUV,EXTERIOR LIGHTING,Elevated (15-20%),4-star or below,3,5
+mazda,cx-5,2017,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),4-star or below,3,6
+mazda,cx-5,2018,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+mazda,cx-5,2019,SUV,ENGINE,Elevated (15-20%),5-star,2,6
+mazda,cx-5,2020,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,5,3
+mazda,cx-5,2021,SUV,ENGINE,Elevated (15-20%),5-star,5,3
+mazda,cx-5,2022,SUV,EXTERIOR LIGHTING,Elevated (15-20%),5-star,5,3
+mazda,cx-5,2023,SUV,EXTERIOR LIGHTING,Elevated (15-20%),5-star,5,3
+mazda,cx-5,2024,SUV,UNKNOWN OR OTHER,Elevated (15-20%),5-star,5,3
+mercedes-benz,c-class,2016,Luxury,ENGINE,Moderate (10-15%),5-star,2,6
+mercedes-benz,c-class,2017,Luxury,ENGINE,Moderate (10-15%),5-star,2,6
+mercedes-benz,c-class,2018,Luxury,ENGINE,Moderate (10-15%),5-star,2,6
+mercedes-benz,c-class,2021,Luxury,ENGINE,Moderate (10-15%),5-star,2,6
+nissan,altima,2016,Sedan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+nissan,altima,2017,Sedan,POWER TRAIN,Moderate (10-15%),5-star,2,6
+nissan,altima,2018,Sedan,UNKNOWN OR OTHER,Moderate (10-15%),5-star,2,1
+nissan,altima,2019,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,2,7
+nissan,altima,2020,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,4,7
+nissan,altima,2021,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+nissan,altima,2022,Sedan,SERVICE BRAKES,Low (<10%),5-star,6,2
+nissan,altima,2023,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,6,2
+nissan,altima,2024,Sedan,UNKNOWN OR OTHER,Low (<10%),5-star,6,2
+nissan,frontier,2017,Truck,FUEL/PROPULSION SYSTEM,High (>20%),4-star or below,3,5
+nissan,frontier,2019,Truck,POWER TRAIN,High (>20%),4-star or below,3,5
+nissan,frontier,2022,Truck,ELECTRICAL SYSTEM,High (>20%),4-star or below,3,5
+nissan,leaf,2016,Electric,SERVICE BRAKES,Moderate (10-15%),4-star or below,7,4
+nissan,leaf,2020,Electric,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,1
+nissan,leaf,2021,Electric,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,4,7
+nissan,rogue,2016,SUV,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+nissan,rogue,2017,SUV,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+nissan,rogue,2018,SUV,SERVICE BRAKES,Elevated (15-20%),4-star or below,3,5
+nissan,rogue,2019,SUV,SERVICE BRAKES,Elevated (15-20%),4-star or below,3,5
+nissan,rogue,2020,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),4-star or below,3,5
+nissan,rogue,2021,SUV,UNKNOWN OR OTHER,Elevated (15-20%),4-star or below,3,5
+nissan,rogue,2022,SUV,ENGINE,Elevated (15-20%),5-star,3,5
+nissan,rogue,2023,SUV,ENGINE,Elevated (15-20%),5-star,5,3
+nissan,rogue,2024,SUV,UNKNOWN OR OTHER,Elevated (15-20%),5-star,5,3
+ram,1500,2016,Truck,STEERING,High (>20%),4-star or below,3,5
+ram,1500,2017,Truck,STEERING,High (>20%),4-star or below,3,5
+ram,1500,2018,Truck,ELECTRICAL SYSTEM,High (>20%),4-star or below,3,5
+ram,1500,2019,Truck,STEERING,Elevated (15-20%),5-star,3,5
+ram,1500,2020,Truck,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,3,5
+ram,1500,2021,Truck,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,3,5
+subaru,legacy,2016,Sedan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+subaru,legacy,2017,Sedan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+subaru,legacy,2018,Sedan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,2,6
+subaru,legacy,2019,Sedan,VISIBILITY/WIPER,Moderate (10-15%),5-star,5,1
+subaru,legacy,2020,Sedan,VISIBILITY/WIPER,Moderate (10-15%),5-star,5,1
+subaru,legacy,2021,Sedan,UNKNOWN OR OTHER,Moderate (10-15%),5-star,5,1
+subaru,legacy,2022,Sedan,VISIBILITY/WIPER,Moderate (10-15%),5-star,5,2
+subaru,legacy,2023,Sedan,UNKNOWN OR OTHER,Moderate (10-15%),5-star,6,2
+subaru,legacy,2024,Sedan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,4,2
+subaru,outback,2016,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,2,6
+subaru,outback,2017,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,2,6
+subaru,outback,2018,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,2,6
+subaru,outback,2019,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,5,3
+subaru,outback,2020,SUV,VISIBILITY/WIPER,Elevated (15-20%),5-star,5,3
+subaru,outback,2021,SUV,VISIBILITY/WIPER,Elevated (15-20%),5-star,5,3
+subaru,outback,2022,SUV,VISIBILITY/WIPER,Elevated (15-20%),5-star,5,3
+subaru,outback,2023,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,5,3
+subaru,outback,2024,SUV,EQUIPMENT,Elevated (15-20%),5-star,5,3
+tesla,model 3,2018,Electric,ELECTRICAL SYSTEM,Low (<10%),5-star,1,1
+tesla,model 3,2019,Electric,FORWARD COLLISION AVOIDANCE,Low (<10%),5-star,1,1
+tesla,model 3,2020,Electric,FORWARD COLLISION AVOIDANCE,Low (<10%),5-star,1,1
+tesla,model 3,2021,Electric,FORWARD COLLISION AVOIDANCE,Low (<10%),5-star,1,1
+tesla,model 3,2022,Electric,FORWARD COLLISION AVOIDANCE,Low (<10%),5-star,1,1
+tesla,model 3,2023,Electric,STEERING,Low (<10%),5-star,1,1
+tesla,model y,2020,Electric,FORWARD COLLISION AVOIDANCE,Low (<10%),5-star,1,1
+toyota,camry,2016,Sedan,AIR BAGS,Moderate (10-15%),5-star,6,2
+toyota,camry,2017,Sedan,UNKNOWN OR OTHER,Moderate (10-15%),5-star,6,2
+toyota,camry,2018,Sedan,POWER TRAIN,Low (<10%),5-star,2,6
+toyota,camry,2019,Sedan,POWER TRAIN,Low (<10%),5-star,5,1
+toyota,camry,2020,Sedan,ELECTRICAL SYSTEM,Low (<10%),5-star,5,1
+toyota,camry,2021,Sedan,AIR BAGS,Low (<10%),5-star,6,2
+toyota,camry,2022,Sedan,AIR BAGS,Low (<10%),5-star,6,2
+toyota,camry,2023,Sedan,UNKNOWN OR OTHER,Low (<10%),5-star,6,2
+toyota,camry,2024,Sedan,STRUCTURE,Low (<10%),5-star,5,2
+toyota,corolla,2016,Sedan,AIR BAGS,Moderate (10-15%),5-star,6,2
+toyota,corolla,2017,Sedan,AIR BAGS,Moderate (10-15%),5-star,6,2
+toyota,corolla,2018,Sedan,AIR BAGS,Moderate (10-15%),5-star,6,2
+toyota,corolla,2019,Sedan,POWER TRAIN,Moderate (10-15%),5-star,5,2
+toyota,corolla,2020,Sedan,ENGINE,Moderate (10-15%),5-star,5,3
+toyota,corolla,2021,Sedan,AIR BAGS,Moderate (10-15%),5-star,5,3
+toyota,corolla,2022,Sedan,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,3
+toyota,corolla,2023,Sedan,STEERING,Moderate (10-15%),5-star,5,2
+toyota,corolla,2024,Sedan,STEERING,Moderate (10-15%),5-star,6,2
+toyota,prius,2016,Hybrid,VISIBILITY/WIPER,Moderate (10-15%),5-star,2,7
+toyota,prius,2017,Hybrid,VISIBILITY/WIPER,Moderate (10-15%),5-star,6,7
+toyota,prius,2018,Hybrid,EXTERIOR LIGHTING,Moderate (10-15%),5-star,6,2
+toyota,prius,2019,Hybrid,UNKNOWN OR OTHER,Moderate (10-15%),5-star,6,2
+toyota,prius,2020,Hybrid,UNKNOWN OR OTHER,Moderate (10-15%),5-star,6,2
+toyota,prius,2021,Hybrid,FUEL/PROPULSION SYSTEM,Moderate (10-15%),5-star,6,2
+toyota,prius,2022,Hybrid,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,6,2
+toyota,prius,2023,Hybrid,ELECTRICAL SYSTEM,Moderate (10-15%),5-star,5,2
+toyota,prius,2024,Hybrid,UNKNOWN OR OTHER,Moderate (10-15%),5-star,5,2
+toyota,rav4,2016,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,4,7
+toyota,rav4,2017,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,4,7
+toyota,rav4,2018,SUV,ELECTRICAL SYSTEM,Elevated (15-20%),5-star,4,7
+toyota,rav4,2019,SUV,FUEL/PROPULSION SYSTEM,Elevated (15-20%),5-star,5,3
+toyota,rav4,2020,SUV,ENGINE,Elevated (15-20%),5-star,5,3
+toyota,rav4,2021,SUV,AIR BAGS,Elevated (15-20%),5-star,6,2
+toyota,rav4,2022,SUV,UNKNOWN OR OTHER,Elevated (15-20%),5-star,5,2
+toyota,rav4,2023,SUV,UNKNOWN OR OTHER,Elevated (15-20%),5-star,5,2
+toyota,rav4,2024,SUV,UNKNOWN OR OTHER,Elevated (15-20%),5-star,6,2
+toyota,sienna,2016,Minivan,STRUCTURE,Moderate (10-15%),5-star,4,7
+toyota,sienna,2017,Minivan,POWER TRAIN,Moderate (10-15%),5-star,2,7
+toyota,sienna,2018,Minivan,POWER TRAIN,Moderate (10-15%),5-star,5,2
+toyota,sienna,2019,Minivan,POWER TRAIN,Moderate (10-15%),5-star,5,2
+toyota,sienna,2020,Minivan,POWER TRAIN,Moderate (10-15%),5-star,5,3
+toyota,tacoma,2016,Truck,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+toyota,tacoma,2017,Truck,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+toyota,tacoma,2018,Truck,SERVICE BRAKES,Elevated (15-20%),4-star or below,3,5
+toyota,tacoma,2019,Truck,SERVICE BRAKES,Elevated (15-20%),4-star or below,3,5
+toyota,tacoma,2020,Truck,POWER TRAIN,Elevated (15-20%),4-star or below,3,5
+toyota,tacoma,2021,Truck,SERVICE BRAKES,Elevated (15-20%),4-star or below,6,5
+toyota,tacoma,2022,Truck,POWER TRAIN,Elevated (15-20%),4-star or below,6,5
+toyota,tacoma,2023,Truck,STEERING,Elevated (15-20%),4-star or below,3,5

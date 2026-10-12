@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PCA | Vehicle Safety Project</title>
-<meta name="description" content="Principal component analysis.">
+<meta name="description" content="Principal component analysis of sixteen vehicle safety measures, with eigenvalues, loadings and projections.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
@@ -34,37 +34,190 @@
   </div>
 </nav>
 <main>
-<h2>PCA</h2>
-<p class="lede">Reducing many correlated safety measures to the few dimensions that carry most of the variation.</p>
+<h2>Principal Component Analysis</h2>
+
+<p class="lede">Sixteen separate safety measures describe each vehicle. The
+question here is whether they are really sixteen different things, or a handful
+of underlying patterns wearing sixteen names.</p>
+
+<h2>Overview</h2>
+
+<p>Principal Component Analysis takes a set of correlated measurements and
+rebuilds them as a new set of axes that are uncorrelated with one another and
+ordered by how much of the data's variation each one carries. The first
+principal component is the single direction through the data along which the
+points are most spread out. The second is the direction of greatest remaining
+spread that is perpendicular to the first, and so on. Each component is a
+weighted blend of all the original variables, with the weights, called
+loadings, saying how much each original measure contributes. Nothing is thrown
+away in the rotation itself. The reduction happens afterwards, when the later
+components, which carry little variation, are discarded.</p>
+
+<p><b>Eigenvalues and eigenvectors</b> sit underneath all of this. For the
+correlation matrix of the standardised data, an eigenvector is a direction that
+the matrix stretches without rotating, and its eigenvalue is how much stretching
+occurs. Translated into data terms, the eigenvectors are the candidate axes and
+the eigenvalues are the variance captured along each. Sorting the eigenvectors
+by their eigenvalues produces the principal components in order of importance,
+which is the whole mechanism. Because the input was standardised, each original
+variable contributes exactly 1 unit of variance, so an eigenvalue above 1 marks
+a component carrying more information than any single original measure did on
+its own.</p>
+
+<figure>
+  <img src="figures/concept_pca_projection.png" alt="What the eigenvectors are, and what projection does">
+  <figcaption><b>What the eigenvectors are, and what projection does.</b> The first eigenvector points along the direction in which the cloud is most stretched and the second lies perpendicular to it. Projecting every point onto the first axis alone collapses two dimensions into one while preserving most of the original spread.</figcaption>
+</figure>
+
+<p><b>Dimensionality reduction</b> matters for three practical reasons. Visual
+inspection is limited to two or three dimensions, so a sixteen-dimensional
+dataset cannot be looked at directly without some projection. Many algorithms
+degrade as dimensions grow, because in high-dimensional space the distance to
+the nearest point and the distance to the furthest point converge, so "nearest"
+stops carrying much meaning, and distance-based methods such as the clustering
+in the previous section rest entirely on that meaning. And the data required to
+cover a space grows exponentially with its dimension, so a sample that
+comfortably describes two variables is sparse across sixteen. Correlated
+variables also make models unstable, since the model cannot tell which of two
+measures that move together is responsible for an effect.</p>
+
+<figure>
+  <img src="figures/concept_dimensionality.png" alt="Why high-dimensional data is difficult">
+  <figcaption><b>Why high-dimensional data is difficult.</b> As dimensions increase, the ratio between the closest and furthest pair of points climbs toward 1, so every point becomes roughly equidistant from every other. The sample size needed to maintain the same coverage grows exponentially alongside it.</figcaption>
+</figure>
+
+<h2>Data Prep</h2>
+
+<p>PCA needs the same input shape as clustering: a <b>purely numeric matrix with
+no labels</b>. The same 16 features and the same 229 vehicles are used, prepared
+identically, so that the two sections are directly comparable. Standardisation
+is even more important here than it was for clustering. PCA finds directions of
+maximum variance, and variance depends on units, so an unstandardised variable
+with a wide numeric range would capture the first component purely by being
+measured on a larger scale. Standardising every column to mean 0 and standard
+deviation 1 means the analysis runs on the correlation matrix rather than the
+covariance matrix, and every variable gets an equal vote.</p>
+
+<figure>
+  <img src="figures/sample_pca_input.png" alt="The standardised matrix passed to PCA">
+  <figcaption><b>The standardised matrix passed to PCA.</b> Every value is now expressed in standard deviations from that column's mean, so positive and negative values appear throughout and no column can dominate through its units. The matrix has mean 0 and standard deviation 1 overall.</figcaption>
+</figure>
+
 <div class="callout">
-  <p><b>This section is completed in Module 2.</b> The structure below is in
-  place and will be filled with the analysis, results, and visualisations for
-  PCA as the course reaches that module.</p>
+  <p><b>Data and code.</b>
+  PCA input: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_sample.csv">pca_sample.csv</a> &middot;
+  Eigenvalues: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_eigenvalues.csv">pca_eigenvalues.csv</a> &middot;
+  Loadings: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_components.csv">pca_components.csv</a> &middot;
+  Vehicle scores: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_scores.csv">pca_scores.csv</a></p>
+  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/pca_analysis.py">pca_analysis.py</a> &mdash;
+  Python, using <code>sklearn.decomposition.PCA</code> with
+  <code>StandardScaler</code>.</p>
 </div>
 
-<h3>Overview</h3>
-<p>Principal component analysis will be used to find which combinations of complaint, recall and crash-test measures explain the most variance, and whether laboratory and ownership measures load onto separate components.</p>
+<h2>Code</h2>
 
-<h3>Data</h3>
-<p>The prepared data for this method will be drawn from the cleaned tables produced
-in Module 1, and the exact subset, encoding, and normalisation used here will be
-shown as a small sample image alongside links to both the raw and the cleaned files.</p>
+<p>The analysis is in <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/pca_analysis.py">pca_analysis.py</a>.
+<code>StandardScaler</code> centres and scales the matrix, then
+<code>sklearn.decomposition.PCA</code> is fitted with all components retained so
+the full eigenvalue spectrum is available for the scree plot. Eigenvalues are
+read from <code>explained_variance_</code> and the eigenvectors from
+<code>components_</code>. The correlation circle multiplies each loading by the
+square root of its eigenvalue, which converts loadings into correlations between
+the original variable and the component and is what bounds every arrow inside
+the unit circle.</p>
+
+<h2>Results</h2>
+
+<h3>How much structure is there?</h3>
+
+<figure>
+  <img src="figures/fig23_scree.png" alt="Variance carried by each principal component">
+  <figcaption><b>Variance carried by each principal component.</b> The first component accounts for 24.2% of the total variance and the second for 14.8%. The curve declines gently rather than dropping off a cliff, which means there is no small set of components that captures almost everything.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig24_eigenvalues.png" alt="Eigenvalues of the correlation matrix">
+  <figcaption><b>Eigenvalues of the correlation matrix.</b> Six components have eigenvalues above 1, meaning each carries more variance than any single original variable contributed. Under the Kaiser criterion those six are worth retaining and the remaining ten are not.</figcaption>
+</figure>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Measure</th><th>Result</th><th>Reading</th></tr></thead>
+  <tbody>
+    <tr><td>Variance in PC1</td><td>24.2%</td><td>No single dominant pattern</td></tr>
+    <tr><td>Variance in PC1 + PC2</td><td>39.0%</td><td>A two-dimensional plot shows well under half the picture</td></tr>
+    <tr><td>Eigenvalues above 1</td><td>6</td><td>Six components beat a single original variable</td></tr>
+    <tr><td>Components for 90% variance</td><td>9 of 16</td><td>Only a 44% reduction in dimensions</td></tr>
+    <tr><td>Components for 95% variance</td><td>12 of 16</td><td>Compression is poor</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>What the components mean</h3>
+
+<figure>
+  <img src="figures/fig25_loadings.png" alt="How each original variable builds each component">
+  <figcaption><b>How each original variable builds each component.</b> Reading down a column shows what that component is made of, with positive and negative loadings pulling in opposite directions. PC1 sets complaint volume and vehicle age against crash rate and driver-assistance fitment; PC2 sets crash-test ratings against realised harm.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/fig26_correlation_circle.png" alt="How each variable relates to the first two components">
+  <figcaption><b>How each variable relates to the first two components.</b> Arrows pointing the same way are correlated, opposite directions are inversely related, and right angles mean unrelated. The severity cluster at upper right and the star-rating cluster at lower right sit nearly perpendicular to the complaint-volume arrow on the left.</figcaption>
+</figure>
+
+<p>Reading the two leading components:</p>
 <ul>
-  <li>Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a></li>
-  <li>Cleaned data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean">data/clean/</a></li>
+  <li><b>PC1 (24.2%) separates an older, high-volume, unassisted fleet from a
+      newer, assisted one with a higher per-complaint harm rate.</b> Complaint
+      volume (&minus;0.36), vehicle age (&minus;0.33) and recalls (&minus;0.23)
+      load negatively, while crash rate (+0.37), severe share (+0.37) and the two
+      driver-assistance indicators (+0.34, +0.33) load positively. It is
+      essentially an age-and-exposure axis.</li>
+  <li><b>PC2 (14.8%) sets laboratory ratings directly against real-world
+      harm.</b> Overall stars (&minus;0.33), front-crash stars (&minus;0.32) and
+      rollover stars (&minus;0.32) oppose severe share (+0.35), injuries per 100
+      (+0.34) and crash rate (+0.30). This component is the central question of
+      the whole project rendered as a single axis.</li>
 </ul>
 
-<h3>Code</h3>
-<p>The code for this section will be linked here once written. All project code is
-Python, using pandas and scikit-learn, and lives in
-<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code">the repository's code folder</a>.</p>
+<figure>
+  <img src="figures/fig27_pca_projection_clusters.png" alt="The seven clusters projected onto the first two components">
+  <figcaption><b>The seven clusters projected onto the first two components.</b> The clusters were fitted on all 16 dimensions, so their separation here is evidence that two components retain genuine structure. The truck and large-SUV group and the high-severity group occupy clearly different regions, while the two largest clusters overlap substantially.</figcaption>
+</figure>
 
-<h3>Results</h3>
-<div class="placeholder">
-  <p>Results, parameter choices, accuracy measures, and visualisations for PCA
-  will appear in this area, together with a discussion of what they mean for the
-  question of how well crash-test ratings predict real-world vehicle problems.</p>
-</div>
+<h2>Conclusions</h2>
+
+<p>The most informative result is a negative one. <b>This data does not reduce
+well.</b> Nine of the sixteen components are needed to retain 90% of the
+variance, and the leading component carries under a quarter of it. For
+comparison, a dataset with strong underlying structure often puts 60&ndash;80%
+into its first two or three components. The sixteen safety measures are
+therefore close to sixteen genuinely separate pieces of information, not a few
+latent factors in disguise. That has a direct practical consequence: there is no
+small number of hidden dimensions that a safety score could summarise, which
+helps explain why a single star rating leaves so much unsaid.</p>
+
+<p>The second component is the more pointed finding. It loads crash-test ratings
+against realised harm with opposite signs, meaning the laboratory measurement
+and the ownership record are <b>not merely different, they vary in opposition</b>
+along the strongest axis on which both appear. In the correlation circle the
+star-rating arrows and the severity arrows sit nearly perpendicular to complaint
+volume and point away from each other. This is the Module 1 observation of a
+weak correlation between star rating and complaint measures, now shown as
+geometry rather than a single coefficient.</p>
+
+<p>PCA and clustering also corroborate each other. The seven clusters, fitted on
+all sixteen dimensions, remain visibly separated when projected onto just two
+components, which is evidence that the structure found earlier is real rather
+than an artefact of the distance metric. Equally, the fact that those clusters
+overlap in the centre of the projection matches the weak silhouette scores: both
+methods, by different routes, describe a dense continuum with distinctive
+behaviour only at the edges.</p>
+
+<p>For the supervised modules that follow, the practical implication is that
+aggressive dimensionality reduction would discard real information. Retaining
+six components on the Kaiser criterion, or nine for 90% of the variance, is
+defensible; compressing to two or three for convenience would not be.</p>
 </main>
 <footer><div class="wrap">
   <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>
