@@ -106,6 +106,7 @@ def prepare():
                       columns=X.columns, index=X.index)
     print(f"  input matrix: {Xs.shape}  (mean {Xs.values.mean():.2e}, "
           f"sd {Xs.values.std():.3f})")
+    X.round(4).to_csv(CLEAN / "pca_before_scaling.csv", index=False)
     Xs.round(4).to_csv(CLEAN / "pca_sample.csv", index=False)
     return df, X, Xs
 

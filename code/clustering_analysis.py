@@ -123,7 +123,10 @@ def prepare():
                       columns=X.columns, index=X.index)
 
     print(f"  unlabeled numeric matrix: {Xs.shape}")
-    X.to_csv(CLEAN / "clustering_sample.csv", index=False)
+    # Saved as a pair so the Data Prep section can show the data before the
+    # transformation (raw units, mixed scales) and after it (standardised).
+    X.round(4).to_csv(CLEAN / "clustering_before_scaling.csv", index=False)
+    Xs.round(4).to_csv(CLEAN / "clustering_sample.csv", index=False)
     return df, held_out, X, Xs
 
 

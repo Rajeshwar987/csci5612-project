@@ -86,6 +86,20 @@ measures that move together is responsible for an effect.</p>
   <figcaption><b>Why high-dimensional data is difficult.</b> As dimensions increase, the ratio between the closest and furthest pair of points climbs toward 1, so every point becomes roughly equidistant from every other. The sample size needed to maintain the same coverage grows exponentially alongside it.</figcaption>
 </figure>
 
+<p><b>How PCA is used in this project.</b> It is put to three jobs here. First,
+as a test of whether the sixteen safety measures are really sixteen separate
+things: if a few components captured most of the variance, that would mean a
+small number of hidden factors drive vehicle safety, and a single summary score
+could in principle represent them. Second, as a way of seeing where the
+laboratory measurements sit relative to the ownership record. Because every
+component is a blend of all sixteen variables, the loadings show directly
+whether star ratings and realised harm move together, move in opposition, or
+are unrelated, which is the central question this project asks. Third, as a
+drawing surface: the clustering in the previous section happened in sixteen
+dimensions and cannot be looked at, so projecting those clusters onto the first
+two components is what makes them visible, and whether they stay separated
+under that projection is evidence about whether they were real.</p>
+
 <h2>Data Prep</h2>
 
 <p>PCA needs the same input shape as clustering: a <b>purely numeric matrix with
@@ -99,8 +113,18 @@ deviation 1 means the analysis runs on the correlation matrix rather than the
 covariance matrix, and every variable gets an equal vote.</p>
 
 <figure>
-  <img src="figures/sample_pca_input.png" alt="The standardised matrix passed to PCA">
-  <figcaption><b>The standardised matrix passed to PCA.</b> Every value is now expressed in standard deviations from that column's mean, so positive and negative values appear throughout and no column can dominate through its units. The matrix has mean 0 and standard deviation 1 overall.</figcaption>
+  <img src="figures/sample_before_transform.png" alt="BEFORE: the Module 1 model-year table">
+  <figcaption><b>BEFORE: the Module 1 model-year table.</b> The starting point is the same table used everywhere else in this project, carrying text labels alongside numeric columns measured on entirely different scales. PCA cannot be run on this directly.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/sample_pca_before.png" alt="BEFORE standardising: the numeric features in their own units">
+  <figcaption><b>BEFORE standardising: the numeric features in their own units.</b> Labels have been dropped and skewed counts logged, but the columns still have wildly unequal variances. Running PCA at this stage would hand the first component to whichever variable happens to be measured on the largest scale.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/sample_pca_input.png" alt="AFTER standardising: the matrix PCA actually receives">
+  <figcaption><b>AFTER standardising: the matrix PCA actually receives.</b> Every value is now expressed in standard deviations from that column's mean, so each variable contributes exactly one unit of variance and no column can dominate through its units. This is what makes the analysis run on the correlation matrix rather than the covariance matrix.</figcaption>
 </figure>
 
 <div class="callout">
@@ -109,9 +133,11 @@ covariance matrix, and every variable gets an equal vote.</p>
   Eigenvalues: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_eigenvalues.csv">pca_eigenvalues.csv</a> &middot;
   Loadings: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_components.csv">pca_components.csv</a> &middot;
   Vehicle scores: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/pca_scores.csv">pca_scores.csv</a></p>
-  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/pca_analysis.py">pca_analysis.py</a> &mdash;
-  Python, using <code>sklearn.decomposition.PCA</code> with
-  <code>StandardScaler</code>.</p>
+  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/pca_analysis.py">pca_analysis.py</a>
+  (full script) &middot;
+  <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/pca.ipynb">pca.ipynb</a>
+  (annotated notebook with outputs) &mdash; Python, using
+  <code>sklearn.decomposition.PCA</code> with <code>StandardScaler</code>.</p>
 </div>
 
 <h2>Code</h2>
@@ -187,37 +213,43 @@ the unit circle.</p>
 
 <h2>Conclusions</h2>
 
-<p>The most informative result is a negative one. <b>This data does not reduce
-well.</b> Nine of the sixteen components are needed to retain 90% of the
-variance, and the leading component carries under a quarter of it. For
-comparison, a dataset with strong underlying structure often puts 60&ndash;80%
-into its first two or three components. The sixteen safety measures are
-therefore close to sixteen genuinely separate pieces of information, not a few
-latent factors in disguise. That has a direct practical consequence: there is no
-small number of hidden dimensions that a safety score could summarise, which
-helps explain why a single star rating leaves so much unsaid.</p>
+<p>The most useful result here is a negative one, and it goes to the heart of
+what this project is asking. If vehicle safety were driven by a few underlying
+qualities &mdash; some general notion of how well a car is built, say &mdash;
+then the sixteen things measured here would mostly be different views of those
+few qualities, and it would be possible to boil them down to two or three
+numbers without losing much. That is not what happens. It takes nine of the
+sixteen measures to preserve most of what makes one vehicle differ from
+another. In plain terms, these really are sixteen separate things to know about
+a car, and knowing some of them tells you remarkably little about the rest.
+That is the clearest argument this project can offer for why a single safety
+score, however carefully earned, leaves so much unsaid.</p>
 
-<p>The second component is the more pointed finding. It loads crash-test ratings
-against realised harm with opposite signs, meaning the laboratory measurement
-and the ownership record are <b>not merely different, they vary in opposition</b>
-along the strongest axis on which both appear. In the correlation circle the
-star-rating arrows and the severity arrows sit nearly perpendicular to complaint
-volume and point away from each other. This is the Module 1 observation of a
-weak correlation between star rating and complaint measures, now shown as
-geometry rather than a single coefficient.</p>
+<p>The second finding is sharper. When the measures are arranged by how they
+vary together, crash-test performance and real-world harm land on opposite
+sides of the same divide. They are not simply unrelated. Along the strongest
+dimension on which both appear, they pull against each other: the vehicles
+scoring best in the laboratory are not the ones whose owners report the fewest
+serious problems, and in this collection they tend to be different vehicles
+altogether. Module 1 noticed this as a weak correlation between star rating and
+complaint measures. Seen this way it is not a weak signal at all, but a clear
+separation between two kinds of safety that happen to share a name.</p>
 
-<p>PCA and clustering also corroborate each other. The seven clusters, fitted on
-all sixteen dimensions, remain visibly separated when projected onto just two
-components, which is evidence that the structure found earlier is real rather
-than an artefact of the distance metric. Equally, the fact that those clusters
-overlap in the centre of the projection matches the weak silhouette scores: both
-methods, by different routes, describe a dense continuum with distinctive
-behaviour only at the edges.</p>
+<p>A third point concerns how much of this a picture can honestly show. Any
+two-dimensional chart of this data, including the ones on this page, is
+displaying well under half of what is actually there. That is worth stating
+plainly rather than hiding, because it sets a limit on how far any visual
+argument about vehicle safety can be pushed. The patterns visible in these
+charts are real, but they are a summary of a far messier reality, and a
+confident-looking plot is not the same thing as a complete one.</p>
 
-<p>For the supervised modules that follow, the practical implication is that
-aggressive dimensionality reduction would discard real information. Retaining
-six components on the Kaiser criterion, or nine for 90% of the variance, is
-defensible; compressing to two or three for convenience would not be.</p>
+<p>Taken together with the clustering, the message for a car buyer is
+consistent. There is no hidden single number that captures how safe a vehicle
+is, no shortcut that collapses the question into one score, and good
+performance in one respect carries no promise of good performance in another. A
+vehicle can be excellent at protecting people during a collision and still be
+among the more troublesome to own, and those two facts sit in different
+records that nobody is currently required to read side by side.</p>
 </main>
 <footer><div class="wrap">
   <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>

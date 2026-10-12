@@ -172,7 +172,10 @@ go dark, whether a battery pack will ignite in a car park, or whether a steering
 component will develop play at eighty thousand miles. Those failures are not
 collisions, but they are unmistakably safety events, and some of them cause
 collisions. A vehicle can therefore hold the highest possible laboratory score
-and still accumulate a long record of dangerous faults in ordinary service.</p>
+and still accumulate a long record of dangerous faults in ordinary service. The
+rating is not dishonest about this, because it never claimed to cover it. The
+difficulty is that the score is the only safety number most buyers ever see, so
+it ends up carrying meaning it was never built to hold.</p>
 
 <p>There is a second, much messier record of how vehicles behave, and it is
 written by the people who own them. When something goes wrong, an owner can file
@@ -189,7 +192,11 @@ is slow, adversarial, and public, and it is the mechanism by which a fault
 affecting one owner eventually protects every other owner of that vehicle. It
 also produces a record that is fundamentally different in character from a crash
 test: retrospective rather than predictive, voluntary rather than standardised,
-and driven by whatever owners happened to notice and bother to report.</p>
+and driven by whatever owners happened to notice and bother to report. That
+dependence on human reporting is both its weakness and its reach. No laboratory
+could afford to drive a million vehicles for a decade, but a million owners do
+it anyway, and some fraction of them write down what went wrong. The resulting
+archive is messy, uneven and irreplaceable.</p>
 
 <p>These two records describe the same vehicles and almost never meet. One is
 generated before a car is sold, under laboratory conditions, and is used to
@@ -205,7 +212,10 @@ ones. Both shifts change what can break and how dangerous the breakage is, and
 neither is captured by a barrier impact. Understanding where the laboratory score
 and the ownership record agree, where they diverge, and which kinds of vehicles
 sit in the gap between them would help buyers read a window sticker more
-accurately, and would help regulators decide where to look next.</p>
+accurately, and would help regulators decide where to look next. Neither record
+is wrong on its own terms. Each simply answers a question the other never
+asked, and nobody has been required to read them together. Doing so is the
+whole purpose of the work that follows.</p>
 
 <p>There is also a timing problem buried in how this information reaches people.
 A crash-test score is fixed at launch, published before a single example has
@@ -220,7 +230,11 @@ comparing two eight-year-old vehicles is handed a number earned when both were
 new, while the record of what actually went wrong with them sits in a federal
 database that almost nobody consults. The gap is not that the rating is wrong.
 It is that the rating is old, and the thing that has aged alongside the vehicle
-is never shown next to it.</p>
+is never shown next to it. Dealers are under no obligation to raise the
+subject, and few buyers know the record exists at all. A rating that cannot
+change and a record that only grows will drift apart by design, not by
+accident. Closing that drift does not require a new test, only a willingness to
+read the second record alongside the first.</p>
 
 <figure>
   <img src="assets/img/crashtest_pole.jpg"
@@ -633,13 +647,29 @@ aside purely to interpret the result afterwards.</p>
 </ul>
 
 <p>The result is a matrix of <b>229 vehicles by 16 numeric features</b>, with no
-labels of any kind.</p>
+labels of any kind. The three images below show the same data before the
+transformation, part-way through it, and after it.</p>
+
+{figure("sample_before_transform.png",
+        "BEFORE: the Module 1 model-year table",
+        "Text columns sit beside numeric ones, and the numeric columns are on "
+        "completely different scales: a crash rate between 0 and 1 next to a "
+        "complaint count in the hundreds next to a star rating from 1 to 5. "
+        "Nothing here could be handed to a distance calculation.")}
+
+{figure("sample_clustering_logged.png",
+        "AFTER the first step: labels removed, skewed counts logged",
+        "Every text column is gone and the three heavily skewed count columns "
+        "have been log-transformed, which is why they now read as values near 5 "
+        "or 6 rather than in the hundreds. The scales are still mismatched, so "
+        "the data is not yet usable.")}
 
 {figure("sample_clustering_input.png",
-        "The exact matrix passed to both algorithms",
-        "Every column is numeric and no column identifies the vehicle, its "
-        "segment or its rating. This is the complete input: the algorithms see "
-        "nothing else.")}
+        "AFTER the second step: standardised, and ready",
+        "Each column now has mean 0 and standard deviation 1, so every value "
+        "reads as a number of standard deviations from average and positive and "
+        "negative figures appear throughout. This is the complete input: the "
+        "algorithms see nothing else.")}
 
 <div class="callout">
   <p><b>Data and code.</b>
@@ -650,8 +680,11 @@ labels of any kind.</p>
   Silhouette sweep:
   <a href="{RAW_GH}/data/clean/kmeans_silhouette_sweep.csv">kmeans_silhouette_sweep.csv</a></p>
   <p>Code: <a href="{BLOB}/code/clustering_analysis.py">clustering_analysis.py</a>
-  &mdash; Python, using scikit-learn for k-means and silhouette scoring and
-  SciPy for the cosine-distance hierarchical linkage and dendrogram.</p>
+  (full script) &middot;
+  <a href="{BLOB}/notebooks/clustering.ipynb">clustering.ipynb</a>
+  (annotated notebook with outputs) &mdash; Python, using scikit-learn for
+  k-means and silhouette scoring and SciPy for the cosine-distance hierarchical
+  linkage and dendrogram.</p>
 </div>
 
 <h2>Code</h2>
@@ -767,36 +800,43 @@ composition checked only after fitting:</p>
 
 <h2>Conclusions</h2>
 
-<p>The clearest result is that the groups are real but weak. Silhouette widths
-peaking around 0.3, with visibly negative values for individual vehicles, say
-that vehicle safety records form a <b>continuum rather than a set of distinct
-types</b>. That is a substantive answer to the question this project asks, not
-a failed analysis. There is no natural population of "dangerous cars" sitting
-apart from a population of "safe cars"; vehicles shade into one another, which
-is precisely why a five-point star rating struggles to separate them.</p>
+<p>Sorting vehicles by their safety records alone, without being told anything
+about who made them or what they cost, produces a result worth knowing: there
+is no such thing as a category of dangerous cars. Vehicles do not fall into a
+safe group and an unsafe group. They shade into one another continuously, with
+only a handful at the far edges standing clearly apart. Anyone hoping for a
+simple list of models to avoid is looking for something the evidence does not
+support, and that is probably the single most useful thing a car buyer could
+take from this exercise.</p>
 
-<p>Where structure does exist, it is organised by <b>physics and equipment
-rather than by brand</b>. The cleanest group in the entire solution is cluster
-3, which contains trucks and large SUVs and nothing else, and which the
-algorithm identified without ever being shown a body style. It was separated by
-rollover probability and crash-test score alone. Cluster 5 is likewise defined
-by universal driver-assistance fitment and recent model years. Vehicle height
-and the equipment fitted turn out to shape the safety record far more than the
-manufacturer does.</p>
+<p>What does separate vehicles is the shape of the machine and the equipment
+bolted to it. The most clearly defined group that emerged contains trucks and
+large sport-utility vehicles and nothing else. Nobody told the method that
+these were trucks. It found them by noticing that tall, heavy vehicles tip over
+more readily and score worse in crash testing, and that those two facts travel
+together reliably enough to mark the group out. A second clear group is defined
+entirely by having automatic braking and lane warning fitted as standard, which
+in practice means it is made up of recent vehicles. Height and equipment turn
+out to describe a vehicle's safety character far better than its badge does.</p>
 
-<p>Two groups complicate the picture in ways worth carrying into later modules.
-Cluster 6 has the highest crash and injury rates in the fleet on low complaint
-volume, while cluster 2 has the highest complaint volume and the lowest crash
-rate. <b>Complaint volume and complaint severity are close to opposites.</b>
-The models people complain about most are not the models whose complaints
-describe the worst outcomes, which means any future prediction built on volume
-alone would point in the wrong direction.</p>
+<p>The most counterintuitive finding concerns complaints themselves. The
+vehicles people complain about most often are not the vehicles whose complaints
+describe the worst outcomes. One group has by far the highest volume of
+complaints and among the lowest rates of actual harm, while another generates
+relatively few complaints but a strikingly high share of them involve a crash
+or an injury. Volume and seriousness pull in opposite directions. A shopper
+who judges a model by how many complaints it has attracted is therefore
+reading the wrong number, and so is anyone who assumes a quiet record means a
+safe one.</p>
 
-<p>Finally, the two methods agreeing at an adjusted Rand index of 0.638 while
-using different distance metrics is reassuring about the groups that survived
-both. The agreement is substantial but incomplete, and the disagreements fall
-where the continuum is densest, exactly where a borderline vehicle could
-reasonably be placed either way.</p>
+<p>One group deserves a note of caution rather than alarm. The vehicles
+attracting the most regulatory attention, by a wide margin, are predominantly
+electric, with roughly ten times the recalls and investigations of the typical
+vehicle. This is easy to misread. These vehicles also hold the highest crash
+ratings and the lowest rollover risk in the entire set, and their technology
+allows many faults to be repaired remotely rather than at a workshop. Intense
+scrutiny of a new technology is not the same thing as danger, and separating
+those two ideas is exactly what a record like this is for.</p>
 """
 
 PCA_TAB = f"""<h2>Principal Component Analysis</h2>
@@ -855,6 +895,20 @@ measures that move together is responsible for an effect.</p>
         "from every other. The sample size needed to maintain the same coverage "
         "grows exponentially alongside it.")}
 
+<p><b>How PCA is used in this project.</b> It is put to three jobs here. First,
+as a test of whether the sixteen safety measures are really sixteen separate
+things: if a few components captured most of the variance, that would mean a
+small number of hidden factors drive vehicle safety, and a single summary score
+could in principle represent them. Second, as a way of seeing where the
+laboratory measurements sit relative to the ownership record. Because every
+component is a blend of all sixteen variables, the loadings show directly
+whether star ratings and realised harm move together, move in opposition, or
+are unrelated, which is the central question this project asks. Third, as a
+drawing surface: the clustering in the previous section happened in sixteen
+dimensions and cannot be looked at, so projecting those clusters onto the first
+two components is what makes them visible, and whether they stay separated
+under that projection is evidence about whether they were real.</p>
+
 <h2>Data Prep</h2>
 
 <p>PCA needs the same input shape as clustering: a <b>purely numeric matrix with
@@ -867,12 +921,25 @@ measured on a larger scale. Standardising every column to mean 0 and standard
 deviation 1 means the analysis runs on the correlation matrix rather than the
 covariance matrix, and every variable gets an equal vote.</p>
 
+{figure("sample_before_transform.png",
+        "BEFORE: the Module 1 model-year table",
+        "The starting point is the same table used everywhere else in this "
+        "project, carrying text labels alongside numeric columns measured on "
+        "entirely different scales. PCA cannot be run on this directly.")}
+
+{figure("sample_pca_before.png",
+        "BEFORE standardising: the numeric features in their own units",
+        "Labels have been dropped and skewed counts logged, but the columns "
+        "still have wildly unequal variances. Running PCA at this stage would "
+        "hand the first component to whichever variable happens to be measured "
+        "on the largest scale.")}
+
 {figure("sample_pca_input.png",
-        "The standardised matrix passed to PCA",
+        "AFTER standardising: the matrix PCA actually receives",
         "Every value is now expressed in standard deviations from that column's "
-        "mean, so positive and negative values appear throughout and no column "
-        "can dominate through its units. The matrix has mean 0 and standard "
-        "deviation 1 overall.")}
+        "mean, so each variable contributes exactly one unit of variance and no "
+        "column can dominate through its units. This is what makes the analysis "
+        "run on the correlation matrix rather than the covariance matrix.")}
 
 <div class="callout">
   <p><b>Data and code.</b>
@@ -880,9 +947,11 @@ covariance matrix, and every variable gets an equal vote.</p>
   Eigenvalues: <a href="{RAW_GH}/data/clean/pca_eigenvalues.csv">pca_eigenvalues.csv</a> &middot;
   Loadings: <a href="{RAW_GH}/data/clean/pca_components.csv">pca_components.csv</a> &middot;
   Vehicle scores: <a href="{RAW_GH}/data/clean/pca_scores.csv">pca_scores.csv</a></p>
-  <p>Code: <a href="{BLOB}/code/pca_analysis.py">pca_analysis.py</a> &mdash;
-  Python, using <code>sklearn.decomposition.PCA</code> with
-  <code>StandardScaler</code>.</p>
+  <p>Code: <a href="{BLOB}/code/pca_analysis.py">pca_analysis.py</a>
+  (full script) &middot;
+  <a href="{BLOB}/notebooks/pca.ipynb">pca.ipynb</a>
+  (annotated notebook with outputs) &mdash; Python, using
+  <code>sklearn.decomposition.PCA</code> with <code>StandardScaler</code>.</p>
 </div>
 
 <h2>Code</h2>
@@ -967,37 +1036,43 @@ the unit circle.</p>
 
 <h2>Conclusions</h2>
 
-<p>The most informative result is a negative one. <b>This data does not reduce
-well.</b> Nine of the sixteen components are needed to retain 90% of the
-variance, and the leading component carries under a quarter of it. For
-comparison, a dataset with strong underlying structure often puts 60&ndash;80%
-into its first two or three components. The sixteen safety measures are
-therefore close to sixteen genuinely separate pieces of information, not a few
-latent factors in disguise. That has a direct practical consequence: there is no
-small number of hidden dimensions that a safety score could summarise, which
-helps explain why a single star rating leaves so much unsaid.</p>
+<p>The most useful result here is a negative one, and it goes to the heart of
+what this project is asking. If vehicle safety were driven by a few underlying
+qualities &mdash; some general notion of how well a car is built, say &mdash;
+then the sixteen things measured here would mostly be different views of those
+few qualities, and it would be possible to boil them down to two or three
+numbers without losing much. That is not what happens. It takes nine of the
+sixteen measures to preserve most of what makes one vehicle differ from
+another. In plain terms, these really are sixteen separate things to know about
+a car, and knowing some of them tells you remarkably little about the rest.
+That is the clearest argument this project can offer for why a single safety
+score, however carefully earned, leaves so much unsaid.</p>
 
-<p>The second component is the more pointed finding. It loads crash-test ratings
-against realised harm with opposite signs, meaning the laboratory measurement
-and the ownership record are <b>not merely different, they vary in opposition</b>
-along the strongest axis on which both appear. In the correlation circle the
-star-rating arrows and the severity arrows sit nearly perpendicular to complaint
-volume and point away from each other. This is the Module 1 observation of a
-weak correlation between star rating and complaint measures, now shown as
-geometry rather than a single coefficient.</p>
+<p>The second finding is sharper. When the measures are arranged by how they
+vary together, crash-test performance and real-world harm land on opposite
+sides of the same divide. They are not simply unrelated. Along the strongest
+dimension on which both appear, they pull against each other: the vehicles
+scoring best in the laboratory are not the ones whose owners report the fewest
+serious problems, and in this collection they tend to be different vehicles
+altogether. Module 1 noticed this as a weak correlation between star rating and
+complaint measures. Seen this way it is not a weak signal at all, but a clear
+separation between two kinds of safety that happen to share a name.</p>
 
-<p>PCA and clustering also corroborate each other. The seven clusters, fitted on
-all sixteen dimensions, remain visibly separated when projected onto just two
-components, which is evidence that the structure found earlier is real rather
-than an artefact of the distance metric. Equally, the fact that those clusters
-overlap in the centre of the projection matches the weak silhouette scores: both
-methods, by different routes, describe a dense continuum with distinctive
-behaviour only at the edges.</p>
+<p>A third point concerns how much of this a picture can honestly show. Any
+two-dimensional chart of this data, including the ones on this page, is
+displaying well under half of what is actually there. That is worth stating
+plainly rather than hiding, because it sets a limit on how far any visual
+argument about vehicle safety can be pushed. The patterns visible in these
+charts are real, but they are a summary of a far messier reality, and a
+confident-looking plot is not the same thing as a complete one.</p>
 
-<p>For the supervised modules that follow, the practical implication is that
-aggressive dimensionality reduction would discard real information. Retaining
-six components on the Kaiser criterion, or nine for 90% of the variance, is
-defensible; compressing to two or three for convenience would not be.</p>
+<p>Taken together with the clustering, the message for a car buyer is
+consistent. There is no hidden single number that captures how safe a vehicle
+is, no shortcut that collapses the question into one score, and good
+performance in one respect carries no promise of good performance in another. A
+vehicle can be excellent at protecting people during a collision and still be
+among the more troublesome to own, and those two facts sit in different
+records that nobody is currently required to read side by side.</p>
 """
 
 CONCLUSIONS = """<h2>Conclusions</h2>

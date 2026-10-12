@@ -51,14 +51,37 @@ def snapshot(df, title, fname, nrows=6, width=15.5, fs=7.2):
 if __name__ == "__main__":
     print("  sample snapshots:")
 
+    # --- BEFORE: the source table, with labels and raw units -------------
+    src = pd.read_csv(CLEAN / "vehicle_model_year.csv")
+    snapshot(src[["make", "model", "model_year", "segment", "n_complaints",
+                  "crash_rate", "median_days_to_report", "n_recalls",
+                  "OverallRating", "RolloverPossibility", "rating_class"]],
+             f"BEFORE: the Module 1 table, {src.shape[0]} rows x {src.shape[1]} "
+             "columns - text labels present, every column on its own scale",
+             "sample_before_transform.png", width=14)
+
+    # --- AFTER (clustering): unlabeled, log-corrected, standardised ------
+    clus_before = pd.read_csv(CLEAN / "clustering_before_scaling.csv")
+    snapshot(clus_before,
+             f"AFTER step 1: labels removed and skewed counts logged - "
+             f"{clus_before.shape[0]} x {clus_before.shape[1]}, still on mixed scales",
+             "sample_clustering_logged.png")
+
     clus = pd.read_csv(CLEAN / "clustering_sample.csv")
-    snapshot(clus, f"Clustering input: {clus.shape[0]} vehicles x {clus.shape[1]} "
-                   "numeric features, no labels of any kind",
+    snapshot(clus, f"AFTER step 2: standardised to mean 0 and sd 1 - the exact "
+                   f"{clus.shape[0]} x {clus.shape[1]} matrix both algorithms receive",
              "sample_clustering_input.png")
 
+    # --- AFTER (PCA) -----------------------------------------------------
+    pca_before = pd.read_csv(CLEAN / "pca_before_scaling.csv")
+    snapshot(pca_before,
+             f"BEFORE standardising: {pca_before.shape[1]} numeric features in "
+             "their own units, variances wildly unequal",
+             "sample_pca_before.png")
+
     pca = pd.read_csv(CLEAN / "pca_sample.csv")
-    snapshot(pca, f"PCA input: the same {pca.shape[1]} features standardised to "
-                  "mean 0 and standard deviation 1",
+    snapshot(pca, f"AFTER standardising: the same {pca.shape[1]} features at "
+                  "mean 0 and sd 1, so each contributes one unit of variance",
              "sample_pca_input.png")
 
     assign = pd.read_csv(CLEAN / "cluster_assignments.csv")

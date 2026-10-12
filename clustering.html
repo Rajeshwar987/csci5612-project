@@ -126,11 +126,22 @@ aside purely to interpret the result afterwards.</p>
 </ul>
 
 <p>The result is a matrix of <b>229 vehicles by 16 numeric features</b>, with no
-labels of any kind.</p>
+labels of any kind. The three images below show the same data before the
+transformation, part-way through it, and after it.</p>
 
 <figure>
-  <img src="figures/sample_clustering_input.png" alt="The exact matrix passed to both algorithms">
-  <figcaption><b>The exact matrix passed to both algorithms.</b> Every column is numeric and no column identifies the vehicle, its segment or its rating. This is the complete input: the algorithms see nothing else.</figcaption>
+  <img src="figures/sample_before_transform.png" alt="BEFORE: the Module 1 model-year table">
+  <figcaption><b>BEFORE: the Module 1 model-year table.</b> Text columns sit beside numeric ones, and the numeric columns are on completely different scales: a crash rate between 0 and 1 next to a complaint count in the hundreds next to a star rating from 1 to 5. Nothing here could be handed to a distance calculation.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/sample_clustering_logged.png" alt="AFTER the first step: labels removed, skewed counts logged">
+  <figcaption><b>AFTER the first step: labels removed, skewed counts logged.</b> Every text column is gone and the three heavily skewed count columns have been log-transformed, which is why they now read as values near 5 or 6 rather than in the hundreds. The scales are still mismatched, so the data is not yet usable.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/sample_clustering_input.png" alt="AFTER the second step: standardised, and ready">
+  <figcaption><b>AFTER the second step: standardised, and ready.</b> Each column now has mean 0 and standard deviation 1, so every value reads as a number of standard deviations from average and positive and negative figures appear throughout. This is the complete input: the algorithms see nothing else.</figcaption>
 </figure>
 
 <div class="callout">
@@ -142,8 +153,11 @@ labels of any kind.</p>
   Silhouette sweep:
   <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/kmeans_silhouette_sweep.csv">kmeans_silhouette_sweep.csv</a></p>
   <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/clustering_analysis.py">clustering_analysis.py</a>
-  &mdash; Python, using scikit-learn for k-means and silhouette scoring and
-  SciPy for the cosine-distance hierarchical linkage and dendrogram.</p>
+  (full script) &middot;
+  <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/clustering.ipynb">clustering.ipynb</a>
+  (annotated notebook with outputs) &mdash; Python, using scikit-learn for
+  k-means and silhouette scoring and SciPy for the cosine-distance hierarchical
+  linkage and dendrogram.</p>
 </div>
 
 <h2>Code</h2>
@@ -245,36 +259,43 @@ composition checked only after fitting:</p>
 
 <h2>Conclusions</h2>
 
-<p>The clearest result is that the groups are real but weak. Silhouette widths
-peaking around 0.3, with visibly negative values for individual vehicles, say
-that vehicle safety records form a <b>continuum rather than a set of distinct
-types</b>. That is a substantive answer to the question this project asks, not
-a failed analysis. There is no natural population of "dangerous cars" sitting
-apart from a population of "safe cars"; vehicles shade into one another, which
-is precisely why a five-point star rating struggles to separate them.</p>
+<p>Sorting vehicles by their safety records alone, without being told anything
+about who made them or what they cost, produces a result worth knowing: there
+is no such thing as a category of dangerous cars. Vehicles do not fall into a
+safe group and an unsafe group. They shade into one another continuously, with
+only a handful at the far edges standing clearly apart. Anyone hoping for a
+simple list of models to avoid is looking for something the evidence does not
+support, and that is probably the single most useful thing a car buyer could
+take from this exercise.</p>
 
-<p>Where structure does exist, it is organised by <b>physics and equipment
-rather than by brand</b>. The cleanest group in the entire solution is cluster
-3, which contains trucks and large SUVs and nothing else, and which the
-algorithm identified without ever being shown a body style. It was separated by
-rollover probability and crash-test score alone. Cluster 5 is likewise defined
-by universal driver-assistance fitment and recent model years. Vehicle height
-and the equipment fitted turn out to shape the safety record far more than the
-manufacturer does.</p>
+<p>What does separate vehicles is the shape of the machine and the equipment
+bolted to it. The most clearly defined group that emerged contains trucks and
+large sport-utility vehicles and nothing else. Nobody told the method that
+these were trucks. It found them by noticing that tall, heavy vehicles tip over
+more readily and score worse in crash testing, and that those two facts travel
+together reliably enough to mark the group out. A second clear group is defined
+entirely by having automatic braking and lane warning fitted as standard, which
+in practice means it is made up of recent vehicles. Height and equipment turn
+out to describe a vehicle's safety character far better than its badge does.</p>
 
-<p>Two groups complicate the picture in ways worth carrying into later modules.
-Cluster 6 has the highest crash and injury rates in the fleet on low complaint
-volume, while cluster 2 has the highest complaint volume and the lowest crash
-rate. <b>Complaint volume and complaint severity are close to opposites.</b>
-The models people complain about most are not the models whose complaints
-describe the worst outcomes, which means any future prediction built on volume
-alone would point in the wrong direction.</p>
+<p>The most counterintuitive finding concerns complaints themselves. The
+vehicles people complain about most often are not the vehicles whose complaints
+describe the worst outcomes. One group has by far the highest volume of
+complaints and among the lowest rates of actual harm, while another generates
+relatively few complaints but a strikingly high share of them involve a crash
+or an injury. Volume and seriousness pull in opposite directions. A shopper
+who judges a model by how many complaints it has attracted is therefore
+reading the wrong number, and so is anyone who assumes a quiet record means a
+safe one.</p>
 
-<p>Finally, the two methods agreeing at an adjusted Rand index of 0.638 while
-using different distance metrics is reassuring about the groups that survived
-both. The agreement is substantial but incomplete, and the disagreements fall
-where the continuum is densest, exactly where a borderline vehicle could
-reasonably be placed either way.</p>
+<p>One group deserves a note of caution rather than alarm. The vehicles
+attracting the most regulatory attention, by a wide margin, are predominantly
+electric, with roughly ten times the recalls and investigations of the typical
+vehicle. This is easy to misread. These vehicles also hold the highest crash
+ratings and the lowest rollover risk in the entire set, and their technology
+allows many faults to be repaired remotely rather than at a workshop. Intense
+scrutiny of a new technology is not the same thing as danger, and separating
+those two ideas is exactly what a record like this is for.</p>
 </main>
 <footer><div class="wrap">
   <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>
