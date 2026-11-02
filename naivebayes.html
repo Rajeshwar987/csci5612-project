@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NaiveBayes | Vehicle Safety Project</title>
-<meta name="description" content="Naive Bayes classification.">
+<meta name="description" content="Multinomial and Bernoulli Naive Bayes predicting crashes from 83,282 labelled complaint narratives.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
@@ -35,36 +35,248 @@
 </nav>
 <main>
 <h2>Naive Bayes</h2>
-<p class="lede">Predicting whether a reported problem turned into a crash, a fire, or an injury.</p>
+
+<p class="lede">When an owner files a safety complaint they describe what
+happened in their own words. This section asks whether those words alone are
+enough to tell that a crash occurred &mdash; without knowing the make, the
+model, or anything else about the vehicle.</p>
+
+<h2>Overview</h2>
+
+<p>Naive Bayes is a supervised classifier, which means it learns from examples
+where the answer is already known. It is built on Bayes' theorem, a rule for
+updating a belief once evidence arrives. Applied to a complaint the question
+becomes: given the words in this narrative, what is the probability that it
+describes a crash? The classifier answers by combining two things it measured
+during training &mdash; how common each class was overall, and how characteristic
+each word is of each class.</p>
+
+<p><b>Training</b> is simple counting. For every word in the vocabulary the
+model counts how many times it appeared in crash narratives and how many times
+in non-crash narratives, then converts those counts into probabilities. No
+iteration or optimisation happens; one pass over the data is enough, which is
+why Naive Bayes trains in seconds on tens of thousands of documents.</p>
+
+<p><b>Prediction</b> multiplies those probabilities together. For a new
+complaint the model takes the prior probability of each class and multiplies it
+by the probability of seeing each observed word given that class, then picks
+whichever class scores higher. The word "naive" refers to the assumption built
+into that multiplication: it treats every word as independent of every other
+word once the class is known. That assumption is plainly false &mdash;
+"seat" and "belt" are not independent &mdash; but the classifier still performs
+well, because it only needs the ranking of the two scores to be right, not the
+scores themselves.</p>
+
+<figure>
+  <img src="figures/nb_concept_how_it_works.png" alt="How Multinomial Naive Bayes classifies one complaint">
+  <figcaption><b>How Multinomial Naive Bayes classifies one complaint.</b> The narrative is reduced to word counts, each class score is formed by multiplying the prior by the probability of every observed word, and the higher score wins. Nothing about word order or grammar survives this process.</figcaption>
+</figure>
+
+<h3>Why smoothing is required</h3>
+
+<p>The multiplication above has a fatal weakness. If a single word in a new
+complaint was never seen in the training examples for a class, its probability
+for that class is zero, and because the scores are products, one zero drives
+the entire class score to zero. A single unfamiliar word would veto an
+otherwise overwhelming case. Since real vocabulary is effectively unbounded,
+this is not a rare edge case but a routine occurrence.</p>
+
+<p>The fix is <b>Laplace smoothing</b>, controlled by a parameter usually called
+alpha: add a small constant to every word count before converting to
+probabilities. Every word then has a small but non-zero probability in every
+class, no single unseen term can veto a prediction, and the model degrades
+gracefully instead of collapsing. Larger alpha pulls the estimates toward a
+uniform distribution, which reduces variance but blurs genuine distinctions, so
+the value is a trade-off rather than a constant. The Results section measures
+this directly on the project's own data.</p>
+
+<figure>
+  <img src="figures/nb_concept_smoothing.png" alt="The zero-probability problem and the fix">
+  <figcaption><b>The zero-probability problem and the fix.</b> On the left, a word never observed in a class receives probability zero, which collapses the entire product to zero. On the right, adding alpha to every count keeps every probability strictly positive.</figcaption>
+</figure>
+
+<h3>Multinomial and Bernoulli Naive Bayes</h3>
+
+<p>The two variants differ in what they consider a feature.
+<b>Multinomial NB</b> models counts: it asks how many times each word appeared,
+so a narrative mentioning "brake" four times supplies stronger evidence than one
+mentioning it once. It expects non-negative integer features, which is exactly
+what a word-count matrix provides, and it is the standard choice for text of
+reasonable length.</p>
+
+<p><b>Bernoulli NB</b> models presence or absence: every feature is reduced to a
+yes-or-no, and repetition is discarded. The important difference is subtler than
+dropping counts, though. Bernoulli explicitly uses the words that are
+<i>absent</i> as evidence, multiplying in a term for every vocabulary word the
+document does not contain, which Multinomial ignores entirely. That makes
+Bernoulli better suited to short documents where presence is informative and
+repetition is noise, and it is why the two can disagree on the same text. Both
+are fitted on the identical split below.</p>
+
+<figure>
+  <img src="figures/nb_concept_variants.png" alt="What each variant treats as a feature">
+  <figcaption><b>What each variant treats as a feature.</b> Multinomial NB keeps the number of times each word occurs, while Bernoulli NB reduces each word to present or absent. Bernoulli also scores the absent words, which Multinomial leaves out of the calculation.</figcaption>
+</figure>
+
+<h2>Data Prep</h2>
+
+<p>Supervised learning requires <b>labelled data</b>: every training example
+must carry the known answer. That is what separates this section from the
+clustering work in Module 2, where no labels were available to the algorithm at
+all. Here the label comes from the complaint record itself &mdash; the federal
+form has a field recording whether a crash occurred &mdash; so the answer is
+recorded fact rather than an interpretation added later.</p>
+
+<p>Narratives shorter than five words were removed, since a handful of tokens
+cannot support a text model, leaving <b>83,282 labelled complaints</b>. Only
+4.74% of them describe a crash, and that imbalance shapes everything that
+follows.</p>
+
+<figure>
+  <img src="figures/nb_sample_labeled.png" alt="The labelled data">
+  <figcaption><b>The labelled data.</b> Each row is one complaint, with the owner's narrative and the recorded outcome in the final column. The label is what makes supervised learning possible; without it, only unsupervised methods could be applied.</figcaption>
+</figure>
+
+<h3>Why the training and testing sets must be disjoint</h3>
+
+<p>The data is split into a <b>training set</b> that the model learns from and a
+<b>testing set</b> used only to measure it. The two must share no rows. A model
+that is tested on examples it was trained on is being asked to recall rather
+than to generalise, and it will report an accuracy that cannot be reproduced on
+anything new. Decision trees make this especially stark, since a sufficiently
+deep tree can memorise its training data perfectly and score 100% on it while
+being useless in practice.</p>
+
+<p>The split here is <b>75% training, 25% testing</b>, drawn with
+<code>train_test_split</code> using a fixed random seed so it reproduces
+exactly. It is <b>stratified</b> on the label, which forces both sets to carry
+the same 4.74% crash proportion; without stratification, random chance could
+leave the rare class badly under-represented in one of them. The split produced
+62,461 training and 20,821 testing complaints, and the code asserts that
+<b>zero complaint IDs appear in both</b> rather than assuming it.</p>
+
+<figure>
+  <img src="figures/nb_sample_train.png" alt="The training set">
+  <figcaption><b>The training set.</b> 62,461 complaints, 75% of the total. The model sees both the narratives and the labels in this set, and every probability it learns comes from here alone.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/nb_sample_test.png" alt="The testing set">
+  <figcaption><b>The testing set.</b> 20,821 complaints held back entirely during training. Every accuracy figure reported below comes from this set, which the model has never seen.</figcaption>
+</figure>
+
+<p>One further precaution matters for text. The vocabulary was built with
+<code>CountVectorizer</code> fitted on the <b>training set only</b>, then applied
+unchanged to the test set. Fitting the vectoriser on all the data first would
+let information about the test documents leak into the model's vocabulary, which
+is a subtle but real form of the same mistake.</p>
+
 <div class="callout">
-  <p><b>This section is completed in Module 3.</b> The structure below is in
-  place and will be filled with the analysis, results, and visualisations for
-  Naive Bayes as the course reaches that module.</p>
+  <p><b>Data and code.</b>
+  Labelled data: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/nb_labeled_sample.csv">nb_labeled_sample.csv</a> &middot;
+  Training sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/nb_train_sample.csv">nb_train_sample.csv</a> &middot;
+  Testing sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/nb_test_sample.csv">nb_test_sample.csv</a> &middot;
+  Metrics: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/nb_results.csv">nb_results.csv</a> &middot;
+  Smoothing sweep: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/nb_smoothing_sweep.csv">nb_smoothing_sweep.csv</a></p>
+  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/naive_bayes_analysis.py">naive_bayes_analysis.py</a>
+  &middot; <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/naive_bayes.ipynb">naive_bayes.ipynb</a></p>
 </div>
 
-<h3>Overview</h3>
-<p>Naive Bayes will be trained on the cleaned complaint records, using both the categorical component fields and the narrative text, with confusion matrices reported against a held-out test set.</p>
+<h2>Code</h2>
 
-<h3>Data</h3>
-<p>The prepared data for this method will be drawn from the cleaned tables produced
-in Module 1, and the exact subset, encoding, and normalisation used here will be
-shown as a small sample image alongside links to both the raw and the cleaned files.</p>
-<ul>
-  <li>Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a></li>
-  <li>Cleaned data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean">data/clean/</a></li>
-</ul>
+<p>The analysis is Python, in
+<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/naive_bayes_analysis.py">naive_bayes_analysis.py</a>.
+Because scikit-learn's <code>MultinomialNB</code> requires numeric input, the
+narratives are converted to a document-term matrix with
+<code>CountVectorizer</code>, limited to the 6,000 most frequent terms, dropping
+English stop words and anything appearing in fewer than five documents. The
+resulting matrix holds non-negative integer counts, which is precisely the input
+Multinomial NB is defined for. <code>BernoulliNB</code> is fitted on the same
+matrix with <code>binarize=0.5</code>, which converts counts to presence flags.
+A majority-class baseline is included deliberately, because without it an
+accuracy figure on imbalanced data is impossible to interpret.</p>
 
-<h3>Code</h3>
-<p>The code for this section will be linked here once written. All project code is
-Python, using pandas and scikit-learn, and lives in
-<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code">the repository's code folder</a>.</p>
+<h2>Results</h2>
 
-<h3>Results</h3>
-<div class="placeholder">
-  <p>Results, parameter choices, accuracy measures, and visualisations for Naive Bayes
-  will appear in this area, together with a discussion of what they mean for the
-  question of how well crash-test ratings predict real-world vehicle problems.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model</th><th>Accuracy</th><th>Precision (Crash)</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td>Multinomial NB</td><td>94.41%</td><td>0.452</td><td><b>0.830</b></td><td>0.585</td></tr>
+    <tr><td>Bernoulli NB</td><td>95.17%</td><td>0.494</td><td>0.806</td><td><b>0.613</b></td></tr>
+    <tr><td>Majority-class baseline</td><td><b>95.26%</b></td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
 </div>
+
+<p><b>The baseline is the most important row in that table.</b> A model that
+ignores the text entirely and answers "no crash" every single time achieves
+95.26% accuracy &mdash; higher than Multinomial Naive Bayes. It is also
+completely useless: it finds none of the crashes. This is what severe class
+imbalance does to accuracy as a measure, and it is why the confusion matrix and
+the per-class figures carry the real information here.</p>
+
+<figure>
+  <img src="figures/nb_fig_confusion_mnb.png" alt="Confusion matrix, Multinomial Naive Bayes">
+  <figcaption><b>Confusion matrix, Multinomial Naive Bayes.</b> Of 987 genuine crash complaints in the test set the model identifies 819, missing 168. The cost is 995 non-crash complaints incorrectly flagged, which is what pulls precision down to 0.45.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/nb_fig_confusion_bnb.png" alt="Confusion matrix, Bernoulli Naive Bayes">
+  <figcaption><b>Confusion matrix, Bernoulli Naive Bayes.</b> Bernoulli flags fewer complaints overall, so it makes fewer false positives and reaches higher precision, at the cost of missing more genuine crashes than the multinomial model.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/nb_fig_model_compare.png" alt="The two variants side by side">
+  <figcaption><b>The two variants side by side.</b> Bernoulli wins on precision and F1 while Multinomial wins on recall, so the better choice depends on whether missing a crash or raising a false alarm is the more expensive error. Both sit far above the baseline on every measure except raw accuracy.</figcaption>
+</figure>
+
+<h3>Smoothing, measured</h3>
+
+<figure>
+  <img src="figures/nb_fig_smoothing.png" alt="Effect of the smoothing parameter">
+  <figcaption><b>Effect of the smoothing parameter.</b> With alpha driven to almost zero, F1 on the crash class falls to 0.572 as unseen words begin vetoing predictions. Performance improves as smoothing increases, reaching 0.652 at alpha = 10, which confirms on this data that smoothing is a requirement rather than a formality.</figcaption>
+</figure>
+
+<h3>What the model learned</h3>
+
+<figure>
+  <img src="figures/nb_fig_top_terms.png" alt="The most informative words in each direction">
+  <figcaption><b>The most informative words in each direction.</b> The crash vocabulary is strikingly concrete: pole, embankment, guardrail, collided, concussion. The non-crash vocabulary is the language of wear and maintenance: paint, peeling, seal, leaking, consumption.</figcaption>
+</figure>
+
+<h2>Conclusions</h2>
+
+<p>The clearest finding is that owners describing a crash write differently from
+owners describing a fault, and the difference is sharp enough for a very simple
+method to detect. The words that give it away are not technical terms but
+physical nouns &mdash; the things vehicles hit. People write about poles,
+embankments, guardrails and fences, and about concussions and bruises. The
+language of a non-crash complaint is the language of maintenance: peeling paint,
+a leaking seal, oil consumption. Nobody designed these two vocabularies; they
+emerged from counting words in eighty thousand accounts.</p>
+
+<p>Practically, this means the free-text field in a safety complaint carries far
+more information than it is currently used for. A regulator receives these
+narratives as prose to be read individually by a human being. The result here
+suggests that a method simple enough to explain on one page can read all of them
+at once and correctly flag more than four out of five crash-related reports.
+That would not replace human judgement, but it would be a reasonable way to
+decide what a human should read first.</p>
+
+<p>The honest limitation is precision. Catching 83% of crashes costs roughly a
+thousand false alarms in a test set of twenty thousand, so fewer than half the
+complaints the model flags actually involve a crash. For a screening tool that
+decides what to examine next, that trade is probably acceptable: missing a
+genuine crash report is the more serious error. For anything automated it would
+not be.</p>
+
+<p>Finally, the comparison with the baseline is itself a conclusion about how
+safety data should be read. A number that sounds excellent &mdash; 95% accuracy
+&mdash; can describe a model that has discovered nothing at all, simply because
+the thing being predicted is rare. Rare outcomes are exactly what vehicle safety
+is about, and any claim of accuracy about them deserves the question: compared
+to what?</p>
 </main>
 <footer><div class="wrap">
   <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>

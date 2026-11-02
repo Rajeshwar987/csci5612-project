@@ -1,0 +1,5 @@
+split,n_left,n_right,gini_parent,gini_weighted_children,gini_gain,entropy_parent,entropy_weighted_children,information_gain
+vehicle_age <= 2,23729,36732,0.08995,0.08931,0.000644,0.2744,0.26938,0.005017
+has_fcw == 1,21042,39419,0.08995,0.08983,0.000125,0.2744,0.27342,0.000975
+summary_words <= 40,12157,48304,0.08995,0.08986,8.9e-05,0.2744,0.27363,0.000772
+rollover_prob <= 0.15,26373,34088,0.08995,0.08989,6.3e-05,0.2744,0.2739,0.0005

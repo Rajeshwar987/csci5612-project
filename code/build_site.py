@@ -1,11 +1,3 @@
-"""
-build_site.py  --  CSCI 5612 Project, Module 1 Part 1
-Generates the project website. Navigation lives in one place so every tab
-stays consistent as later modules fill the remaining sections in.
-
-Run:  py code/build_site.py
-"""
-
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -244,6 +236,27 @@ read the second record alongside the first.</p>
   single point beside the driver. Photograph by the U.S. National Highway Traffic
   Safety Administration, a public-domain federal work.</figcaption>
 </figure>
+
+<p>Underneath both records sits a quieter asymmetry, which is who does the
+writing. A crash-test score is produced by engineers with instruments, in
+conditions they control, and it arrives in a form built to be compared. The
+ownership record is produced by whoever was unlucky enough to need it, in their
+own words, at whatever moment they finally decided the problem was serious
+enough to report. One is a measurement and the other is testimony. Testimony is
+usually treated as the weaker evidence, and in any individual case it is: a
+single account can be mistaken about what failed, or about why. But the people
+filing these reports were present for something no laboratory can stage, and
+there are hundreds of thousands of them. What one owner noticed is an anecdote;
+what thousands of owners independently noticed about the same component is a
+signal, and it is a signal that no amount of controlled testing before sale
+could have produced. Reading that testimony at scale, rather than one complaint
+at a time, is the part of this problem that has only recently become possible,
+and it is where the remainder of this project is aimed. The asymmetry also
+explains why the two records have stayed apart for so long. A measurement
+arrives already structured, in neat columns ready to be ranked, while testimony
+arrives as prose and has to be read before it can be counted at all. For most
+of the period both records have existed, reading hundreds of thousands of
+accounts was simply not something anyone could afford to do.</p>
 
 <h2>Ten questions this project sets out to answer</h2>
 <ol class="questions">
@@ -1075,6 +1088,527 @@ among the more troublesome to own, and those two facts sit in different
 records that nobody is currently required to read side by side.</p>
 """
 
+NB_TAB = f"""<h2>Naive Bayes</h2>
+
+<p class="lede">When an owner files a safety complaint they describe what
+happened in their own words. This section asks whether those words alone are
+enough to tell that a crash occurred &mdash; without knowing the make, the
+model, or anything else about the vehicle.</p>
+
+<h2>Overview</h2>
+
+<p>Naive Bayes is a supervised classifier, which means it learns from examples
+where the answer is already known. It is built on Bayes' theorem, a rule for
+updating a belief once evidence arrives. Applied to a complaint the question
+becomes: given the words in this narrative, what is the probability that it
+describes a crash? The classifier answers by combining two things it measured
+during training &mdash; how common each class was overall, and how characteristic
+each word is of each class.</p>
+
+<p><b>Training</b> is simple counting. For every word in the vocabulary the
+model counts how many times it appeared in crash narratives and how many times
+in non-crash narratives, then converts those counts into probabilities. No
+iteration or optimisation happens; one pass over the data is enough, which is
+why Naive Bayes trains in seconds on tens of thousands of documents.</p>
+
+<p><b>Prediction</b> multiplies those probabilities together. For a new
+complaint the model takes the prior probability of each class and multiplies it
+by the probability of seeing each observed word given that class, then picks
+whichever class scores higher. The word "naive" refers to the assumption built
+into that multiplication: it treats every word as independent of every other
+word once the class is known. That assumption is plainly false &mdash;
+"seat" and "belt" are not independent &mdash; but the classifier still performs
+well, because it only needs the ranking of the two scores to be right, not the
+scores themselves.</p>
+
+{figure("nb_concept_how_it_works.png",
+        "How Multinomial Naive Bayes classifies one complaint",
+        "The narrative is reduced to word counts, each class score is formed by "
+        "multiplying the prior by the probability of every observed word, and the "
+        "higher score wins. Nothing about word order or grammar survives this "
+        "process.")}
+
+<h3>Why smoothing is required</h3>
+
+<p>The multiplication above has a fatal weakness. If a single word in a new
+complaint was never seen in the training examples for a class, its probability
+for that class is zero, and because the scores are products, one zero drives
+the entire class score to zero. A single unfamiliar word would veto an
+otherwise overwhelming case. Since real vocabulary is effectively unbounded,
+this is not a rare edge case but a routine occurrence.</p>
+
+<p>The fix is <b>Laplace smoothing</b>, controlled by a parameter usually called
+alpha: add a small constant to every word count before converting to
+probabilities. Every word then has a small but non-zero probability in every
+class, no single unseen term can veto a prediction, and the model degrades
+gracefully instead of collapsing. Larger alpha pulls the estimates toward a
+uniform distribution, which reduces variance but blurs genuine distinctions, so
+the value is a trade-off rather than a constant. The Results section measures
+this directly on the project's own data.</p>
+
+{figure("nb_concept_smoothing.png",
+        "The zero-probability problem and the fix",
+        "On the left, a word never observed in a class receives probability zero, "
+        "which collapses the entire product to zero. On the right, adding alpha to "
+        "every count keeps every probability strictly positive.")}
+
+<h3>Multinomial and Bernoulli Naive Bayes</h3>
+
+<p>The two variants differ in what they consider a feature.
+<b>Multinomial NB</b> models counts: it asks how many times each word appeared,
+so a narrative mentioning "brake" four times supplies stronger evidence than one
+mentioning it once. It expects non-negative integer features, which is exactly
+what a word-count matrix provides, and it is the standard choice for text of
+reasonable length.</p>
+
+<p><b>Bernoulli NB</b> models presence or absence: every feature is reduced to a
+yes-or-no, and repetition is discarded. The important difference is subtler than
+dropping counts, though. Bernoulli explicitly uses the words that are
+<i>absent</i> as evidence, multiplying in a term for every vocabulary word the
+document does not contain, which Multinomial ignores entirely. That makes
+Bernoulli better suited to short documents where presence is informative and
+repetition is noise, and it is why the two can disagree on the same text. Both
+are fitted on the identical split below.</p>
+
+{figure("nb_concept_variants.png",
+        "What each variant treats as a feature",
+        "Multinomial NB keeps the number of times each word occurs, while "
+        "Bernoulli NB reduces each word to present or absent. Bernoulli also "
+        "scores the absent words, which Multinomial leaves out of the calculation.")}
+
+<h2>Data Prep</h2>
+
+<p>Supervised learning requires <b>labelled data</b>: every training example
+must carry the known answer. That is what separates this section from the
+clustering work in Module 2, where no labels were available to the algorithm at
+all. Here the label comes from the complaint record itself &mdash; the federal
+form has a field recording whether a crash occurred &mdash; so the answer is
+recorded fact rather than an interpretation added later.</p>
+
+<p>Narratives shorter than five words were removed, since a handful of tokens
+cannot support a text model, leaving <b>83,282 labelled complaints</b>. Only
+4.74% of them describe a crash, and that imbalance shapes everything that
+follows.</p>
+
+{figure("nb_sample_labeled.png",
+        "The labelled data",
+        "Each row is one complaint, with the owner's narrative and the recorded "
+        "outcome in the final column. The label is what makes supervised learning "
+        "possible; without it, only unsupervised methods could be applied.")}
+
+<h3>Why the training and testing sets must be disjoint</h3>
+
+<p>The data is split into a <b>training set</b> that the model learns from and a
+<b>testing set</b> used only to measure it. The two must share no rows. A model
+that is tested on examples it was trained on is being asked to recall rather
+than to generalise, and it will report an accuracy that cannot be reproduced on
+anything new. Decision trees make this especially stark, since a sufficiently
+deep tree can memorise its training data perfectly and score 100% on it while
+being useless in practice.</p>
+
+<p>The split here is <b>75% training, 25% testing</b>, drawn with
+<code>train_test_split</code> using a fixed random seed so it reproduces
+exactly. It is <b>stratified</b> on the label, which forces both sets to carry
+the same 4.74% crash proportion; without stratification, random chance could
+leave the rare class badly under-represented in one of them. The split produced
+62,461 training and 20,821 testing complaints, and the code asserts that
+<b>zero complaint IDs appear in both</b> rather than assuming it.</p>
+
+{figure("nb_sample_train.png",
+        "The training set",
+        "62,461 complaints, 75% of the total. The model sees both the narratives "
+        "and the labels in this set, and every probability it learns comes from "
+        "here alone.")}
+
+{figure("nb_sample_test.png",
+        "The testing set",
+        "20,821 complaints held back entirely during training. Every accuracy "
+        "figure reported below comes from this set, which the model has never seen.")}
+
+<p>One further precaution matters for text. The vocabulary was built with
+<code>CountVectorizer</code> fitted on the <b>training set only</b>, then applied
+unchanged to the test set. Fitting the vectoriser on all the data first would
+let information about the test documents leak into the model's vocabulary, which
+is a subtle but real form of the same mistake.</p>
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Labelled data: <a href="{RAW_GH}/data/clean/nb_labeled_sample.csv">nb_labeled_sample.csv</a> &middot;
+  Training sample: <a href="{RAW_GH}/data/clean/nb_train_sample.csv">nb_train_sample.csv</a> &middot;
+  Testing sample: <a href="{RAW_GH}/data/clean/nb_test_sample.csv">nb_test_sample.csv</a> &middot;
+  Metrics: <a href="{RAW_GH}/data/clean/nb_results.csv">nb_results.csv</a> &middot;
+  Smoothing sweep: <a href="{RAW_GH}/data/clean/nb_smoothing_sweep.csv">nb_smoothing_sweep.csv</a></p>
+  <p>Code: <a href="{BLOB}/code/naive_bayes_analysis.py">naive_bayes_analysis.py</a>
+  &middot; <a href="{BLOB}/notebooks/naive_bayes.ipynb">naive_bayes.ipynb</a></p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is Python, in
+<a href="{BLOB}/code/naive_bayes_analysis.py">naive_bayes_analysis.py</a>.
+Because scikit-learn's <code>MultinomialNB</code> requires numeric input, the
+narratives are converted to a document-term matrix with
+<code>CountVectorizer</code>, limited to the 6,000 most frequent terms, dropping
+English stop words and anything appearing in fewer than five documents. The
+resulting matrix holds non-negative integer counts, which is precisely the input
+Multinomial NB is defined for. <code>BernoulliNB</code> is fitted on the same
+matrix with <code>binarize=0.5</code>, which converts counts to presence flags.
+A majority-class baseline is included deliberately, because without it an
+accuracy figure on imbalanced data is impossible to interpret.</p>
+
+<h2>Results</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model</th><th>Accuracy</th><th>Precision (Crash)</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td>Multinomial NB</td><td>94.41%</td><td>0.452</td><td><b>0.830</b></td><td>0.585</td></tr>
+    <tr><td>Bernoulli NB</td><td>95.17%</td><td>0.494</td><td>0.806</td><td><b>0.613</b></td></tr>
+    <tr><td>Majority-class baseline</td><td><b>95.26%</b></td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><b>The baseline is the most important row in that table.</b> A model that
+ignores the text entirely and answers "no crash" every single time achieves
+95.26% accuracy &mdash; higher than Multinomial Naive Bayes. It is also
+completely useless: it finds none of the crashes. This is what severe class
+imbalance does to accuracy as a measure, and it is why the confusion matrix and
+the per-class figures carry the real information here.</p>
+
+{figure("nb_fig_confusion_mnb.png",
+        "Confusion matrix, Multinomial Naive Bayes",
+        "Of 987 genuine crash complaints in the test set the model identifies 819, "
+        "missing 168. The cost is 995 non-crash complaints incorrectly flagged, "
+        "which is what pulls precision down to 0.45.")}
+
+{figure("nb_fig_confusion_bnb.png",
+        "Confusion matrix, Bernoulli Naive Bayes",
+        "Bernoulli flags fewer complaints overall, so it makes fewer false "
+        "positives and reaches higher precision, at the cost of missing more "
+        "genuine crashes than the multinomial model.")}
+
+{figure("nb_fig_model_compare.png",
+        "The two variants side by side",
+        "Bernoulli wins on precision and F1 while Multinomial wins on recall, so "
+        "the better choice depends on whether missing a crash or raising a false "
+        "alarm is the more expensive error. Both sit far above the baseline on "
+        "every measure except raw accuracy.")}
+
+<h3>Smoothing, measured</h3>
+
+{figure("nb_fig_smoothing.png",
+        "Effect of the smoothing parameter",
+        "With alpha driven to almost zero, F1 on the crash class falls to 0.572 "
+        "as unseen words begin vetoing predictions. Performance improves as "
+        "smoothing increases, reaching 0.652 at alpha = 10, which confirms on this "
+        "data that smoothing is a requirement rather than a formality.")}
+
+<h3>What the model learned</h3>
+
+{figure("nb_fig_top_terms.png",
+        "The most informative words in each direction",
+        "The crash vocabulary is strikingly concrete: pole, embankment, guardrail, "
+        "collided, concussion. The non-crash vocabulary is the language of wear and "
+        "maintenance: paint, peeling, seal, leaking, consumption.")}
+
+<h2>Conclusions</h2>
+
+<p>The clearest finding is that owners describing a crash write differently from
+owners describing a fault, and the difference is sharp enough for a very simple
+method to detect. The words that give it away are not technical terms but
+physical nouns &mdash; the things vehicles hit. People write about poles,
+embankments, guardrails and fences, and about concussions and bruises. The
+language of a non-crash complaint is the language of maintenance: peeling paint,
+a leaking seal, oil consumption. Nobody designed these two vocabularies; they
+emerged from counting words in eighty thousand accounts.</p>
+
+<p>Practically, this means the free-text field in a safety complaint carries far
+more information than it is currently used for. A regulator receives these
+narratives as prose to be read individually by a human being. The result here
+suggests that a method simple enough to explain on one page can read all of them
+at once and correctly flag more than four out of five crash-related reports.
+That would not replace human judgement, but it would be a reasonable way to
+decide what a human should read first.</p>
+
+<p>The honest limitation is precision. Catching 83% of crashes costs roughly a
+thousand false alarms in a test set of twenty thousand, so fewer than half the
+complaints the model flags actually involve a crash. For a screening tool that
+decides what to examine next, that trade is probably acceptable: missing a
+genuine crash report is the more serious error. For anything automated it would
+not be.</p>
+
+<p>Finally, the comparison with the baseline is itself a conclusion about how
+safety data should be read. A number that sounds excellent &mdash; 95% accuracy
+&mdash; can describe a model that has discovered nothing at all, simply because
+the thing being predicted is rare. Rare outcomes are exactly what vehicle safety
+is about, and any claim of accuracy about them deserves the question: compared
+to what?</p>
+"""
+
+DT_TAB = f"""<h2>Decision Trees</h2>
+
+<p class="lede">The previous section predicted crashes from what owners wrote.
+This section asks a harder question: can the same crashes be predicted from the
+vehicle's own characteristics &mdash; its age, its rating, its equipment &mdash;
+without reading a single word of the narrative?</p>
+
+<h2>Overview</h2>
+
+<p>A decision tree is a sequence of yes-or-no questions arranged so that each
+answer narrows the possibilities. Prediction is the easy half: a new record
+enters at the top, each question sends it left or right, and when it reaches a
+leaf it receives whatever label dominates that leaf. The result is a model
+anyone can read, which is rare and genuinely valuable in a safety context, where
+"the model says so" is not an acceptable justification.</p>
+
+<p><b>Training</b> is where the real work happens, and it is greedy. The
+algorithm considers every feature and every threshold it could split on,
+measures how much each candidate split would improve the purity of the resulting
+groups, keeps the best one, and then repeats the entire procedure independently
+inside each branch. It never revisits an earlier decision. Growth stops when a
+limit is reached &mdash; maximum depth, a minimum number of samples in a leaf,
+or a group that is already pure.</p>
+
+{figure("dt_concept_how_it_works.png",
+        "The same model drawn two ways",
+        "Each split is a straight cut through the data, so a tree carves the space "
+        "into rectangles. The tree diagram on the right is the same set of cuts "
+        "written as a sequence of questions.")}
+
+<h3>Gini, entropy and information gain</h3>
+
+<p>"Purity" needs a definition, and there are two standard ones. Both measure how
+mixed a group of records is, and both are zero when a group contains only one
+class.</p>
+
+<ul>
+  <li><b>Gini impurity</b> is the probability that two records drawn at random
+      from the group have different labels. It peaks at 0.5 for a two-class
+      problem split evenly.</li>
+  <li><b>Entropy</b> is the average number of bits needed to communicate the
+      label of a record drawn from the group. It peaks at 1.0 for an even
+      two-class split.</li>
+</ul>
+
+<p><b>Information gain</b> is the quantity actually being maximised: the impurity
+of the parent group minus the weighted average impurity of the two children the
+split would create. Weighting by group size matters, because a split that
+produces one immaculate branch of three records and one messy branch of thirty
+thousand has achieved almost nothing. A positive information gain means the
+split left the data more organised than it found it, and the tree simply keeps
+whichever candidate scores highest.</p>
+
+{figure("dt_concept_impurity.png",
+        "Gini and entropy compared",
+        "Both curves peak where a group is evenly divided and fall to zero when it "
+        "is pure. Entropy rises more steeply near the edges, so it slightly favours "
+        "splits that isolate small clean groups, but the two rarely disagree about "
+        "which split is best.")}
+
+<h3>A worked example on this project's data</h3>
+
+<p>Taking the real training set of 60,461 complaints and testing the candidate
+rule <b>vehicle age &le; 2 years</b>:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Entropy of the parent group (all 60,461 rows)</td><td>0.27440</td></tr>
+    <tr><td>Left branch, rule matches</td><td>23,729 rows</td></tr>
+    <tr><td>Right branch, rule does not match</td><td>36,732 rows</td></tr>
+    <tr><td>Weighted average entropy of the two children</td><td>0.26938</td></tr>
+    <tr><td><b>Information gain</b></td><td><b>0.27440 &minus; 0.26938 = 0.00502</b></td></tr>
+    <tr><td>The same split measured by Gini</td><td>0.08995 &minus; 0.08931 = 0.00064</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Both measures agree that the split helps, and both agree it helps only
+slightly. Comparing it against three other candidate rules shows why the tree
+chose it anyway: it was simply the best of a weak field.</p>
+
+{figure("dt_concept_worked_example.png",
+        "Four candidate splits scored on the real training data",
+        "Vehicle age produces roughly five times the information gain of the next "
+        "best candidate, which is why a tree would select it. The absolute gains "
+        "are small for every rule tested, which foreshadows the modest results "
+        "below.")}
+
+<h3>Why there are infinitely many possible trees</h3>
+
+<p>For any dataset with continuous features the number of possible trees is
+unbounded. A numeric feature offers a threshold between every pair of adjacent
+values, features can be reused at any depth with different thresholds, the same
+features can be arranged in any order, and nothing prevents a branch being
+extended until every leaf holds a single record. The space of trees grows faster
+than exponentially with depth, so finding the genuinely optimal tree is
+computationally intractable for any real dataset. This is the reason the training
+procedure is greedy: it takes the best split available right now and never
+reconsiders, which is fast and usually good but carries no guarantee of
+optimality. It is also the reason depth limits exist. Among that infinity of
+trees, the ones that fit the training data best are almost always the ones that
+have memorised it.</p>
+
+<h2>Data Prep</h2>
+
+<p>The same requirement applies as in the previous section: supervised learning
+needs <b>labelled data</b>, and the label here is identical &mdash; did this
+complaint involve a crash &mdash; so the two methods can be compared directly.</p>
+
+<p>The features are entirely different, though. Instead of narrative text, each
+complaint is described by the vehicle and the report: vehicle age at the
+incident, days taken to report it, model year, the crash-test rating, rollover
+probability, whether collision and lane warning were fitted, the recall count,
+and how long the narrative was. Because scikit-learn's trees require numeric
+input, the two categorical fields &mdash; body segment and the component
+implicated &mdash; were <b>one-hot encoded</b>, with the long tail of rare
+components collapsed into a single "other" category to stop the encoding from
+exploding. Joining to the rated-vehicle table leaves <b>80,615 complaints
+described by 29 numeric features</b>.</p>
+
+{figure("dt_sample_labeled.png",
+        "The labelled feature matrix",
+        "Every column is numeric, including the one-hot columns that stand in for "
+        "body segment and component. The label sits in the final column, exactly as "
+        "supervised learning requires.")}
+
+<p>The train/test split follows the same discipline: <b>75/25, stratified on the
+label, fixed seed, and verified disjoint</b> in code rather than assumed. That
+gives 60,461 training and 20,154 testing rows, both carrying the same 4.72%
+crash rate. The reason the sets must not overlap is especially visible with
+trees: an unconstrained tree can drive its training error to zero by growing a
+leaf for every record, so testing it on its own training data would report
+perfect accuracy for a model that has learned nothing transferable. The depth
+sweep below shows exactly that happening.</p>
+
+{figure("dt_sample_train.png",
+        "The training set",
+        "60,461 rows, three-quarters of the total. Every split threshold the trees "
+        "choose is derived from this set alone.")}
+
+{figure("dt_sample_test.png",
+        "The testing set",
+        "20,154 rows held back completely. No threshold, no feature choice and no "
+        "depth decision was informed by anything in this set.")}
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Labelled matrix: <a href="{RAW_GH}/data/clean/dt_labeled_sample.csv">dt_labeled_sample.csv</a> &middot;
+  Training sample: <a href="{RAW_GH}/data/clean/dt_train_sample.csv">dt_train_sample.csv</a> &middot;
+  Testing sample: <a href="{RAW_GH}/data/clean/dt_test_sample.csv">dt_test_sample.csv</a> &middot;
+  Worked split example: <a href="{RAW_GH}/data/clean/dt_information_gain.csv">dt_information_gain.csv</a> &middot;
+  Metrics: <a href="{RAW_GH}/data/clean/dt_results.csv">dt_results.csv</a></p>
+  <p>Code: <a href="{BLOB}/code/decision_tree_analysis.py">decision_tree_analysis.py</a>
+  &middot; <a href="{BLOB}/notebooks/decision_trees.ipynb">decision_trees.ipynb</a></p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is Python, in
+<a href="{BLOB}/code/decision_tree_analysis.py">decision_tree_analysis.py</a>,
+using <code>DecisionTreeClassifier</code> from scikit-learn. All three trees are
+fitted with <code>class_weight="balanced"</code>, which reweights the rare class
+so the tree is not simply rewarded for predicting "no crash" everywhere. The
+impurity functions used in the worked example above are implemented directly in
+the script rather than taken from a library, so the arithmetic can be checked
+line by line.</p>
+
+<h2>Results</h2>
+
+<h3>Three trees</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tree</th><th>Criterion</th><th>Depth</th><th>Leaves</th><th>Accuracy</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td>Tree 1</td><td>Gini</td><td>3</td><td>8</td><td>88.22%</td><td>0.495</td><td><b>0.284</b></td></tr>
+    <tr><td>Tree 2</td><td>Entropy</td><td>5</td><td>32</td><td>87.21%</td><td>0.536</td><td>0.284</td></tr>
+    <tr><td>Tree 3</td><td>Gini</td><td>10</td><td>170</td><td>73.43%</td><td><b>0.702</b></td><td>0.200</td></tr>
+    <tr><td>Baseline</td><td>&mdash;</td><td>0</td><td>1</td><td>95.28%</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
+</div>
+
+{figure("dt_fig_tree1.png",
+        "Tree 1: Gini, depth 3",
+        "The first question asked is whether the complaint concerns airbags, which "
+        "is the single most informative attribute available. Because the classes "
+        "are reweighted, the proportions shown in each node are balanced rather "
+        "than raw counts.")}
+
+{figure("dt_fig_tree2.png",
+        "Tree 2: entropy, depth 5",
+        "Switching the impurity measure from Gini to entropy and allowing two more "
+        "levels produces 32 leaves instead of 8. The top of the tree is almost "
+        "unchanged, which is the usual finding: the two criteria rarely disagree "
+        "about the best split.")}
+
+{figure("dt_fig_tree3.png",
+        "Tree 3: Gini, depth 10, minimum 50 samples per leaf",
+        "Allowing ten levels produces 170 leaves and raises recall to 0.70, "
+        "catching far more crashes, but accuracy collapses to 73% because it now "
+        "flags enormous numbers of ordinary complaints.")}
+
+{figure("dt_fig_confusion.png",
+        "Confusion matrix for the best-scoring tree",
+        "The tree finds roughly half the crashes in the test set and raises about "
+        "four false alarms for every genuine one it catches. Compared against the "
+        "Naive Bayes matrix on the same label, the difference is substantial.")}
+
+{figure("dt_fig_importance.png",
+        "Which attributes the tree actually used",
+        "The component implicated in the complaint dominates, while the "
+        "crash-test rating and rollover probability contribute very little. The "
+        "vehicle's measured safety characteristics are close to irrelevant for "
+        "this prediction.")}
+
+<h3>Why a bigger tree is a worse tree</h3>
+
+{figure("dt_fig_depth_curve.png",
+        "Training and testing performance as depth increases",
+        "Beyond roughly depth 11 the two curves separate decisively: training F1 "
+        "climbs toward 0.46 while testing F1 falls to 0.19. The tree is memorising "
+        "individual training records, and the only reason this is visible at all is "
+        "that the test set was kept disjoint.")}
+
+<h2>Conclusions</h2>
+
+<p>The headline result is a comparison rather than a number. Predicting a crash
+from what an owner wrote succeeds reasonably well; predicting the same crash
+from the vehicle's own characteristics barely works at all. The text-based model
+reached an F1 of 0.61 on the crash class, while the best tree built on vehicle
+age, rating, equipment and component reached 0.28. Both were given the same
+label, the same underlying complaints and the same split discipline. The
+difference is entirely in what they were allowed to look at.</p>
+
+<p>That gap is the most topic-relevant thing this module produced. It says that
+whether a particular complaint involved a crash is mostly a property of
+<b>what happened</b>, not of <b>what was driving</b>. Knowing a vehicle's star
+rating, its rollover probability, whether it has automatic braking and how many
+recalls it has carries remarkably little information about whether any given
+incident ended in a collision. The feature-importance chart makes this concrete:
+the crash-test rating, the headline number a buyer is given, ranks near the
+bottom of what the tree found useful.</p>
+
+<p>One attribute does carry real signal, and it is the one a buyer never sees in
+advance: which part of the car is being complained about. The tree's very first
+question is whether the complaint concerns airbags, and from there it asks about
+speed control and brakes. Component-level failures distinguish dangerous
+incidents far better than any vehicle-level specification does, which suggests
+that useful safety information lives at the level of parts rather than whole
+cars.</p>
+
+<p>The deepest tree is also a caution worth keeping. It catches 70% of crashes,
+nearly as many as the text model, and by that one measure it looks the strongest
+of the three. It does so by flagging so many ordinary complaints that its overall
+accuracy falls to 73%, well below simply guessing. A model can be made to look
+good on whichever measure is quoted, which is precisely why the confusion matrix,
+the baseline and the held-back test set all had to be reported together rather
+than any one of them alone.</p>
+"""
+
 CONCLUSIONS = """<h2>Conclusions</h2>
 <p class="lede">This section closes the project's story in plain language, without
 technical vocabulary, once all the analysis is complete.</p>
@@ -1147,20 +1681,12 @@ PAGES = {
     "pca.html": ("PCA",
                  "Principal component analysis of sixteen vehicle safety measures, "
                  "with eigenvalues, loadings and projections.", PCA_TAB),
-    "naivebayes.html": ("NaiveBayes", "Naive Bayes classification.",
-        stub("Naive Bayes", 3,
-             "Predicting whether a reported problem turned into a crash, a fire, or "
-             "an injury.",
-             "Naive Bayes will be trained on the cleaned complaint records, using "
-             "both the categorical component fields and the narrative text, with "
-             "confusion matrices reported against a held-out test set.")),
-    "dectrees.html": ("DecTrees", "Decision tree classification.",
-        stub("Decision Trees", 3,
-             "Finding the decision rules that best separate harmful complaints from "
-             "routine ones.",
-             "Decision trees will be fitted to the same prediction task as Naive "
-             "Bayes, with tree depth tuned and the resulting rules visualised, since "
-             "an interpretable rule set is valuable in a safety context.")),
+    "naivebayes.html": ("NaiveBayes",
+                        "Multinomial and Bernoulli Naive Bayes predicting crashes "
+                        "from 83,282 labelled complaint narratives.", NB_TAB),
+    "dectrees.html": ("DecTrees",
+                      "Three decision trees predicting crashes from vehicle "
+                      "attributes, with Gini, entropy and information gain.", DT_TAB),
     "svms.html": ("SVMs", "Support vector machines.",
         stub("Support Vector Machines", 4,
              "Testing whether a margin-based classifier separates safety outcomes "

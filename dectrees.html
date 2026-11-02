@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DecTrees | Vehicle Safety Project</title>
-<meta name="description" content="Decision tree classification.">
+<meta name="description" content="Three decision trees predicting crashes from vehicle attributes, with Gini, entropy and information gain.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
@@ -35,36 +35,250 @@
 </nav>
 <main>
 <h2>Decision Trees</h2>
-<p class="lede">Finding the decision rules that best separate harmful complaints from routine ones.</p>
-<div class="callout">
-  <p><b>This section is completed in Module 3.</b> The structure below is in
-  place and will be filled with the analysis, results, and visualisations for
-  Decision Trees as the course reaches that module.</p>
-</div>
 
-<h3>Overview</h3>
-<p>Decision trees will be fitted to the same prediction task as Naive Bayes, with tree depth tuned and the resulting rules visualised, since an interpretable rule set is valuable in a safety context.</p>
+<p class="lede">The previous section predicted crashes from what owners wrote.
+This section asks a harder question: can the same crashes be predicted from the
+vehicle's own characteristics &mdash; its age, its rating, its equipment &mdash;
+without reading a single word of the narrative?</p>
 
-<h3>Data</h3>
-<p>The prepared data for this method will be drawn from the cleaned tables produced
-in Module 1, and the exact subset, encoding, and normalisation used here will be
-shown as a small sample image alongside links to both the raw and the cleaned files.</p>
+<h2>Overview</h2>
+
+<p>A decision tree is a sequence of yes-or-no questions arranged so that each
+answer narrows the possibilities. Prediction is the easy half: a new record
+enters at the top, each question sends it left or right, and when it reaches a
+leaf it receives whatever label dominates that leaf. The result is a model
+anyone can read, which is rare and genuinely valuable in a safety context, where
+"the model says so" is not an acceptable justification.</p>
+
+<p><b>Training</b> is where the real work happens, and it is greedy. The
+algorithm considers every feature and every threshold it could split on,
+measures how much each candidate split would improve the purity of the resulting
+groups, keeps the best one, and then repeats the entire procedure independently
+inside each branch. It never revisits an earlier decision. Growth stops when a
+limit is reached &mdash; maximum depth, a minimum number of samples in a leaf,
+or a group that is already pure.</p>
+
+<figure>
+  <img src="figures/dt_concept_how_it_works.png" alt="The same model drawn two ways">
+  <figcaption><b>The same model drawn two ways.</b> Each split is a straight cut through the data, so a tree carves the space into rectangles. The tree diagram on the right is the same set of cuts written as a sequence of questions.</figcaption>
+</figure>
+
+<h3>Gini, entropy and information gain</h3>
+
+<p>"Purity" needs a definition, and there are two standard ones. Both measure how
+mixed a group of records is, and both are zero when a group contains only one
+class.</p>
+
 <ul>
-  <li>Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a></li>
-  <li>Cleaned data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean">data/clean/</a></li>
+  <li><b>Gini impurity</b> is the probability that two records drawn at random
+      from the group have different labels. It peaks at 0.5 for a two-class
+      problem split evenly.</li>
+  <li><b>Entropy</b> is the average number of bits needed to communicate the
+      label of a record drawn from the group. It peaks at 1.0 for an even
+      two-class split.</li>
 </ul>
 
-<h3>Code</h3>
-<p>The code for this section will be linked here once written. All project code is
-Python, using pandas and scikit-learn, and lives in
-<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code">the repository's code folder</a>.</p>
+<p><b>Information gain</b> is the quantity actually being maximised: the impurity
+of the parent group minus the weighted average impurity of the two children the
+split would create. Weighting by group size matters, because a split that
+produces one immaculate branch of three records and one messy branch of thirty
+thousand has achieved almost nothing. A positive information gain means the
+split left the data more organised than it found it, and the tree simply keeps
+whichever candidate scores highest.</p>
 
-<h3>Results</h3>
-<div class="placeholder">
-  <p>Results, parameter choices, accuracy measures, and visualisations for Decision Trees
-  will appear in this area, together with a discussion of what they mean for the
-  question of how well crash-test ratings predict real-world vehicle problems.</p>
+<figure>
+  <img src="figures/dt_concept_impurity.png" alt="Gini and entropy compared">
+  <figcaption><b>Gini and entropy compared.</b> Both curves peak where a group is evenly divided and fall to zero when it is pure. Entropy rises more steeply near the edges, so it slightly favours splits that isolate small clean groups, but the two rarely disagree about which split is best.</figcaption>
+</figure>
+
+<h3>A worked example on this project's data</h3>
+
+<p>Taking the real training set of 60,461 complaints and testing the candidate
+rule <b>vehicle age &le; 2 years</b>:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Entropy of the parent group (all 60,461 rows)</td><td>0.27440</td></tr>
+    <tr><td>Left branch, rule matches</td><td>23,729 rows</td></tr>
+    <tr><td>Right branch, rule does not match</td><td>36,732 rows</td></tr>
+    <tr><td>Weighted average entropy of the two children</td><td>0.26938</td></tr>
+    <tr><td><b>Information gain</b></td><td><b>0.27440 &minus; 0.26938 = 0.00502</b></td></tr>
+    <tr><td>The same split measured by Gini</td><td>0.08995 &minus; 0.08931 = 0.00064</td></tr>
+  </tbody>
+</table>
 </div>
+
+<p>Both measures agree that the split helps, and both agree it helps only
+slightly. Comparing it against three other candidate rules shows why the tree
+chose it anyway: it was simply the best of a weak field.</p>
+
+<figure>
+  <img src="figures/dt_concept_worked_example.png" alt="Four candidate splits scored on the real training data">
+  <figcaption><b>Four candidate splits scored on the real training data.</b> Vehicle age produces roughly five times the information gain of the next best candidate, which is why a tree would select it. The absolute gains are small for every rule tested, which foreshadows the modest results below.</figcaption>
+</figure>
+
+<h3>Why there are infinitely many possible trees</h3>
+
+<p>For any dataset with continuous features the number of possible trees is
+unbounded. A numeric feature offers a threshold between every pair of adjacent
+values, features can be reused at any depth with different thresholds, the same
+features can be arranged in any order, and nothing prevents a branch being
+extended until every leaf holds a single record. The space of trees grows faster
+than exponentially with depth, so finding the genuinely optimal tree is
+computationally intractable for any real dataset. This is the reason the training
+procedure is greedy: it takes the best split available right now and never
+reconsiders, which is fast and usually good but carries no guarantee of
+optimality. It is also the reason depth limits exist. Among that infinity of
+trees, the ones that fit the training data best are almost always the ones that
+have memorised it.</p>
+
+<h2>Data Prep</h2>
+
+<p>The same requirement applies as in the previous section: supervised learning
+needs <b>labelled data</b>, and the label here is identical &mdash; did this
+complaint involve a crash &mdash; so the two methods can be compared directly.</p>
+
+<p>The features are entirely different, though. Instead of narrative text, each
+complaint is described by the vehicle and the report: vehicle age at the
+incident, days taken to report it, model year, the crash-test rating, rollover
+probability, whether collision and lane warning were fitted, the recall count,
+and how long the narrative was. Because scikit-learn's trees require numeric
+input, the two categorical fields &mdash; body segment and the component
+implicated &mdash; were <b>one-hot encoded</b>, with the long tail of rare
+components collapsed into a single "other" category to stop the encoding from
+exploding. Joining to the rated-vehicle table leaves <b>80,615 complaints
+described by 29 numeric features</b>.</p>
+
+<figure>
+  <img src="figures/dt_sample_labeled.png" alt="The labelled feature matrix">
+  <figcaption><b>The labelled feature matrix.</b> Every column is numeric, including the one-hot columns that stand in for body segment and component. The label sits in the final column, exactly as supervised learning requires.</figcaption>
+</figure>
+
+<p>The train/test split follows the same discipline: <b>75/25, stratified on the
+label, fixed seed, and verified disjoint</b> in code rather than assumed. That
+gives 60,461 training and 20,154 testing rows, both carrying the same 4.72%
+crash rate. The reason the sets must not overlap is especially visible with
+trees: an unconstrained tree can drive its training error to zero by growing a
+leaf for every record, so testing it on its own training data would report
+perfect accuracy for a model that has learned nothing transferable. The depth
+sweep below shows exactly that happening.</p>
+
+<figure>
+  <img src="figures/dt_sample_train.png" alt="The training set">
+  <figcaption><b>The training set.</b> 60,461 rows, three-quarters of the total. Every split threshold the trees choose is derived from this set alone.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/dt_sample_test.png" alt="The testing set">
+  <figcaption><b>The testing set.</b> 20,154 rows held back completely. No threshold, no feature choice and no depth decision was informed by anything in this set.</figcaption>
+</figure>
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Labelled matrix: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_labeled_sample.csv">dt_labeled_sample.csv</a> &middot;
+  Training sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_train_sample.csv">dt_train_sample.csv</a> &middot;
+  Testing sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_test_sample.csv">dt_test_sample.csv</a> &middot;
+  Worked split example: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_information_gain.csv">dt_information_gain.csv</a> &middot;
+  Metrics: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_results.csv">dt_results.csv</a></p>
+  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/decision_tree_analysis.py">decision_tree_analysis.py</a>
+  &middot; <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/decision_trees.ipynb">decision_trees.ipynb</a></p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is Python, in
+<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/decision_tree_analysis.py">decision_tree_analysis.py</a>,
+using <code>DecisionTreeClassifier</code> from scikit-learn. All three trees are
+fitted with <code>class_weight="balanced"</code>, which reweights the rare class
+so the tree is not simply rewarded for predicting "no crash" everywhere. The
+impurity functions used in the worked example above are implemented directly in
+the script rather than taken from a library, so the arithmetic can be checked
+line by line.</p>
+
+<h2>Results</h2>
+
+<h3>Three trees</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tree</th><th>Criterion</th><th>Depth</th><th>Leaves</th><th>Accuracy</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td>Tree 1</td><td>Gini</td><td>3</td><td>8</td><td>88.22%</td><td>0.495</td><td><b>0.284</b></td></tr>
+    <tr><td>Tree 2</td><td>Entropy</td><td>5</td><td>32</td><td>87.21%</td><td>0.536</td><td>0.284</td></tr>
+    <tr><td>Tree 3</td><td>Gini</td><td>10</td><td>170</td><td>73.43%</td><td><b>0.702</b></td><td>0.200</td></tr>
+    <tr><td>Baseline</td><td>&mdash;</td><td>0</td><td>1</td><td>95.28%</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
+</div>
+
+<figure>
+  <img src="figures/dt_fig_tree1.png" alt="Tree 1: Gini, depth 3">
+  <figcaption><b>Tree 1: Gini, depth 3.</b> The first question asked is whether the complaint concerns airbags, which is the single most informative attribute available. Because the classes are reweighted, the proportions shown in each node are balanced rather than raw counts.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/dt_fig_tree2.png" alt="Tree 2: entropy, depth 5">
+  <figcaption><b>Tree 2: entropy, depth 5.</b> Switching the impurity measure from Gini to entropy and allowing two more levels produces 32 leaves instead of 8. The top of the tree is almost unchanged, which is the usual finding: the two criteria rarely disagree about the best split.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/dt_fig_tree3.png" alt="Tree 3: Gini, depth 10, minimum 50 samples per leaf">
+  <figcaption><b>Tree 3: Gini, depth 10, minimum 50 samples per leaf.</b> Allowing ten levels produces 170 leaves and raises recall to 0.70, catching far more crashes, but accuracy collapses to 73% because it now flags enormous numbers of ordinary complaints.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/dt_fig_confusion.png" alt="Confusion matrix for the best-scoring tree">
+  <figcaption><b>Confusion matrix for the best-scoring tree.</b> The tree finds roughly half the crashes in the test set and raises about four false alarms for every genuine one it catches. Compared against the Naive Bayes matrix on the same label, the difference is substantial.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/dt_fig_importance.png" alt="Which attributes the tree actually used">
+  <figcaption><b>Which attributes the tree actually used.</b> The component implicated in the complaint dominates, while the crash-test rating and rollover probability contribute very little. The vehicle's measured safety characteristics are close to irrelevant for this prediction.</figcaption>
+</figure>
+
+<h3>Why a bigger tree is a worse tree</h3>
+
+<figure>
+  <img src="figures/dt_fig_depth_curve.png" alt="Training and testing performance as depth increases">
+  <figcaption><b>Training and testing performance as depth increases.</b> Beyond roughly depth 11 the two curves separate decisively: training F1 climbs toward 0.46 while testing F1 falls to 0.19. The tree is memorising individual training records, and the only reason this is visible at all is that the test set was kept disjoint.</figcaption>
+</figure>
+
+<h2>Conclusions</h2>
+
+<p>The headline result is a comparison rather than a number. Predicting a crash
+from what an owner wrote succeeds reasonably well; predicting the same crash
+from the vehicle's own characteristics barely works at all. The text-based model
+reached an F1 of 0.61 on the crash class, while the best tree built on vehicle
+age, rating, equipment and component reached 0.28. Both were given the same
+label, the same underlying complaints and the same split discipline. The
+difference is entirely in what they were allowed to look at.</p>
+
+<p>That gap is the most topic-relevant thing this module produced. It says that
+whether a particular complaint involved a crash is mostly a property of
+<b>what happened</b>, not of <b>what was driving</b>. Knowing a vehicle's star
+rating, its rollover probability, whether it has automatic braking and how many
+recalls it has carries remarkably little information about whether any given
+incident ended in a collision. The feature-importance chart makes this concrete:
+the crash-test rating, the headline number a buyer is given, ranks near the
+bottom of what the tree found useful.</p>
+
+<p>One attribute does carry real signal, and it is the one a buyer never sees in
+advance: which part of the car is being complained about. The tree's very first
+question is whether the complaint concerns airbags, and from there it asks about
+speed control and brakes. Component-level failures distinguish dangerous
+incidents far better than any vehicle-level specification does, which suggests
+that useful safety information lives at the level of parts rather than whole
+cars.</p>
+
+<p>The deepest tree is also a caution worth keeping. It catches 70% of crashes,
+nearly as many as the text model, and by that one measure it looks the strongest
+of the three. It does so by flagging so many ordinary complaints that its overall
+accuracy falls to 73%, well below simply guessing. A model can be made to look
+good on whichever measure is quoted, which is precisely why the confusion matrix,
+the baseline and the held-back test set all had to be reported together rather
+than any one of them alone.</p>
 </main>
 <footer><div class="wrap">
   <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>

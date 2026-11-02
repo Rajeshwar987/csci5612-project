@@ -1,0 +1,5 @@
+model,accuracy,precision_crash,recall_crash,f1_crash,leaves,depth
+"Tree 1: gini, depth 3",0.8822,0.1992,0.4953,0.2841,8,3
+"Tree 2: entropy, depth 5",0.8721,0.1927,0.5363,0.2836,32,5
+"Tree 3: gini, depth 10, min_leaf 50",0.7343,0.1164,0.7024,0.1997,170,10
+Majority-class baseline,0.9528,0.0,0.0,0.0,1,0
