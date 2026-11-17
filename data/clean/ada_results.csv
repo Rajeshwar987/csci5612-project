@@ -1,0 +1,6 @@
+model,accuracy,precision_crash,recall_crash,f1_crash
+"AdaBoost (126 stumps, lr 1)",0.9481,0.4281,0.2944,0.3489
+"Part 3 decision tree (gini, depth 3)",0.8822,0.1992,0.4953,0.2841
+AdaBoost at the default cut-off,0.7834,0.1349,0.6635,0.2242
+A single stump,0.9448,0.3899,0.2997,0.3389
+Majority-class baseline,0.9528,0.0,0.0,0.0

@@ -1,0 +1,4 @@
+model,test_rmse,test_mae,test_r2
+"Chosen model (ridge, alpha=100)",3.3868,2.5642,-0.0251
+"LinearRegression (OLS), same features",4.1814,3.0966,-0.5625
+Baseline: training mean,3.5782,3.0646,-0.1442

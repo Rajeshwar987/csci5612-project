@@ -1,0 +1,41 @@
+feature_set,alpha,cv_rmse,cv_r2
+Crash-test ratings only,0.0,5.46235,0.01457
+Crash-test ratings only,0.3,5.45975,0.01551
+Crash-test ratings only,1.0,5.45398,0.01759
+Crash-test ratings only,3.0,5.43952,0.02279
+Crash-test ratings only,10.0,5.40543,0.035
+Crash-test ratings only,30.0,5.36957,0.04776
+Crash-test ratings only,100.0,5.37317,0.04649
+Crash-test ratings only,300.0,5.42422,0.02828
+Crash-test ratings only,1000.0,5.4815,0.00765
+Crash-test ratings only,3000.0,5.50919,-0.0024
+Ratings + equipment + segment,0.0,5.60483,-0.03751
+Ratings + equipment + segment,0.3,5.59037,-0.03216
+Ratings + equipment + segment,1.0,5.5623,-0.02182
+Ratings + equipment + segment,3.0,5.50545,-0.00104
+Ratings + equipment + segment,10.0,5.39554,0.03853
+Ratings + equipment + segment,30.0,5.26293,0.08521
+Ratings + equipment + segment,100.0,5.1733,0.1161
+Ratings + equipment + segment,300.0,5.2339,0.09527
+Ratings + equipment + segment,1000.0,5.37634,0.04536
+Ratings + equipment + segment,3000.0,5.46471,0.01372
+Ownership record only,0.0,5.09916,0.14126
+Ownership record only,0.3,5.09843,0.1415
+Ownership record only,1.0,5.09677,0.14206
+Ownership record only,3.0,5.09243,0.14352
+Ownership record only,10.0,5.08098,0.14737
+Ownership record only,30.0,5.06779,0.15179
+Ownership record only,100.0,5.09521,0.14259
+Ownership record only,300.0,5.2157,0.10155
+Ownership record only,1000.0,5.37997,0.04407
+Ownership record only,3000.0,5.46874,0.01226
+Everything,0.0,5.3123,0.06797
+Everything,0.3,5.2978,0.07305
+Everything,1.0,5.26911,0.08306
+Everything,3.0,5.20823,0.10413
+Everything,10.0,5.0813,0.14726
+Everything,30.0,4.92772,0.19803
+Everything,100.0,4.86311,0.21892
+Everything,300.0,5.00529,0.17258
+Everything,1000.0,5.25317,0.0886
+Everything,3000.0,5.41113,0.03296

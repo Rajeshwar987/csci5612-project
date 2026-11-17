@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Regression | Vehicle Safety Project</title>
-<meta name="description" content="Linear regression.">
+<meta name="description" content="Linear regression of vehicle crash rates and logistic regression of 83,282 complaint narratives, compared with Naive Bayes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
@@ -26,45 +26,395 @@
       <a href="pca.html">PCA</a>
       <a href="naivebayes.html">NaiveBayes</a>
       <a href="dectrees.html">DecTrees</a>
-      <a href="svms.html">SVMs</a>
       <a href="regression.html" class="active">Regression</a>
-      <a href="nn.html">NN</a>
+      <a href="adaboost.html">AdaBoost</a>
+      <a href="gradientboosting.html">GradientBoosting</a>
+      <a href="xgboost.html">XGBoost</a>
       <a href="conclusions.html">Conclusions</a>
       <a href="about.html">About Me</a>
   </div>
 </nav>
 <main>
 <h2>Regression</h2>
-<p class="lede">Predicting continuous safety measures, such as complaint rate and rollover probability.</p>
+
+<p class="lede">Two questions, one for each kind of regression. Can a vehicle's
+ratings, equipment and record predict <i>how often</i> its owners' complaints
+involve a crash? And can a single complaint be classified as a crash or not
+from the owner's own words, more reliably than Naive Bayes managed?</p>
+
+<h2>Overview</h2>
+
+<p><b>Linear regression</b> predicts a number. It assumes the target can be
+written as a weighted sum of the inputs plus a constant,
+<i>y</i> = <i>b</i><sub>0</sub> + <i>b</i><sub>1</sub><i>x</i><sub>1</sub> +
+<i>b</i><sub>2</sub><i>x</i><sub>2</sub> + &hellip;, and it chooses the weights
+that make the squared distances between the predictions and the true values as
+small as possible. Those distances are the residuals, and squaring them means a
+few large misses cost far more than many small ones. Each weight, or
+coefficient, has a direct reading: it is the change in the prediction when that
+one input rises by one unit and every other input is held fixed. That
+readability is the method's great strength, and also its trap, because when two
+inputs move together the model cannot tell which one deserves the credit and
+the individual coefficients become unstable. A <b>ridge penalty</b> addresses
+this by adding a cost proportional to the squared size of the coefficients,
+which pulls them toward zero and shares credit between correlated inputs; the
+strength of that penalty, alpha, is a setting to be chosen.</p>
+
+<p><b>Logistic regression</b> predicts which of two classes a record belongs
+to. It begins exactly as linear regression does, by forming a weighted sum of
+the inputs, but that linear score <i>z</i> can be any number from minus to plus
+infinity and is not yet a probability. The <b>sigmoid function</b>,
+&sigma;(<i>z</i>) = 1 / (1 + <i>e</i><sup>&minus;<i>z</i></sup>), squeezes
+the score into the range 0 to 1: large positive scores approach 1, large
+negative scores approach 0, and a score of exactly 0 maps to 0.5. That number is
+read as the probability of the positive class, and it becomes a class by
+comparing it with a threshold, normally 0.5. Because the weights are fitted by
+maximising the likelihood of the observed labels rather than by minimising
+squared error, each coefficient has a precise meaning on the <b>odds</b> scale:
+raising an input by one unit multiplies the odds of the positive class by
+<i>e</i><sup><i>b</i></sup>.</p>
+
+<figure>
+  <img src="figures/reg_concept_linear_vs_logistic.png" alt="What each kind of regression predicts">
+  <figcaption><b>What each kind of regression predicts.</b> Linear regression fits a straight line through numeric targets, and the grey residuals are the errors it minimises. Logistic regression fits an S-shaped curve to points that sit at 0 or 1, and its output is a probability of belonging to class 1.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/reg_concept_sigmoid.png" alt="How logistic regression turns a score into a class">
+  <figcaption><b>How logistic regression turns a score into a class.</b> The linear score is passed through the sigmoid to become a probability, and anything at or above 0.5 is predicted as Crash. The same score, exponentiated, is the odds, which is why each coefficient acts as a multiplier on the odds.</figcaption>
+</figure>
+
+<p>The two differ in what they predict, how they are fitted and how they are
+judged. Linear regression outputs a number, minimises squared error, and is
+judged by how far its predictions land from the truth (RMSE, MAE) and how much
+of the variation it explains (R&sup2;). Logistic regression outputs a
+probability, maximises likelihood, and is judged like any classifier, with a
+confusion matrix. Both are linear in the inputs, which keeps them fast,
+transparent and hard to overfit, and both are blind to interactions unless
+those are added by hand.</p>
+
+<p><b>How they are used here.</b> Linear regression takes the 218 vehicles
+whose complaint record is large enough to trust and asks whether their crash
+rate can be predicted from what a buyer can see in advance &mdash; star ratings,
+rollover probability, standard equipment, body type &mdash; together with the
+shape of their complaint record. Logistic regression returns to the task
+Naive Bayes attempted in Part 3, classifying each complaint as a crash or not
+from its narrative, on exactly the same complaints, words and test set, so the
+two text classifiers can be compared directly.</p>
+
+<h2>Data Prep</h2>
+
+<p>Both models are supervised, so both need <b>labelled data</b>: every row must
+carry the answer the model is trained to reproduce. The two models need
+different kinds of answer. Linear regression needs a <b>numeric target</b>,
+and logistic regression needs a <b>two-class label</b>.</p>
+
+<h3>Linear regression: one row per vehicle</h3>
+
+<p>The target is <code>crash_rate_pct</code>, the percentage of a model-year's
+complaints that involved a crash, taken from the joined model-year table built
+in Module 1. Model-years with fewer than 20 complaints were removed first,
+because a rate computed from a handful of reports is mostly noise: one vehicle
+with seven complaints showed a crash rate of 43%. That leaves <b>218
+model-years</b>. Seventeen numeric inputs were used:</p>
+<ul>
+  <li><b>Crash-test ratings:</b> overall, front-crash, side-crash and rollover
+      stars, and rollover probability in percentage points.</li>
+  <li><b>Equipment:</b> whether forward-collision warning and lane-departure
+      warning are standard (0 or 1).</li>
+  <li><b>Body segment:</b> categorical, so it was one-hot encoded into six 0/1
+      columns with SUV as the reference level, which means each segment
+      coefficient reads as "compared with an SUV".</li>
+  <li><b>Ownership record:</b> mean vehicle age at incident, median days to
+      report, and the logarithms of complaint and recall counts, which span
+      three orders of magnitude.</li>
+</ul>
+<p>Crash, injury and severity counts were deliberately left out. They are
+built from the same reports as the target, so including them would let the
+model read the answer instead of predicting it.</p>
+
+<figure>
+  <img src="figures/reg_lin_sample.png" alt="The linear regression data">
+  <figcaption><b>The linear regression data.</b> One row per model-year, with the numeric target in the final column. A subset of the seventeen input columns is shown; the full file is linked below.</figcaption>
+</figure>
+
+<p>The rows were split <b>75/25 at random with a fixed seed</b> into 163
+training and 55 testing vehicles. The split is not stratified because the
+target is a number rather than a class. The code checks that no make, model and
+year appears in both sets. That separation is what makes the test meaningful: a
+model scored on vehicles it was fitted to would be rewarded for memorising their
+crash rates rather than for predicting new ones. Every setting was then chosen with
+<b>5-fold cross-validation inside the 163 training vehicles</b>; the 55 test
+vehicles were used once, at the very end.</p>
+
+<figure>
+  <img src="figures/reg_lin_train.png" alt="The linear regression training set">
+  <figcaption><b>The linear regression training set.</b> 163 model-years. The coefficients, the choice of features and the ridge penalty all come from these rows alone.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/reg_lin_test.png" alt="The linear regression testing set">
+  <figcaption><b>The linear regression testing set.</b> 55 model-years never seen while fitting or tuning. Every error figure reported below for linear regression is measured on these.</figcaption>
+</figure>
+
+<h3>Logistic regression: one row per complaint</h3>
+
+<p>Logistic regression uses <b>exactly the same data as the Naive Bayes
+tab</b>: the 83,282 complaints with narratives of at least five words, the label
+<code>Crash</code> or <code>No crash</code> taken from the crash field on the
+federal complaint form, and the same word-count matrix &mdash; English stop words
+removed, terms in fewer than five documents dropped, the 6,000 most frequent
+kept. The vocabulary is learned from the training set only and then applied to
+the test set unchanged.</p>
+
+<figure>
+  <img src="figures/reg_log_sample.png" alt="The logistic regression data">
+  <figcaption><b>The logistic regression data.</b> Each row is one complaint with its narrative and its two-class label. Only 4.74% of the labels are Crash, which shapes how the results have to be read.</figcaption>
+</figure>
+
+<p>The split is the Naive Bayes split reproduced exactly: <b>75/25, stratified
+on the label, same seed</b>, giving 62,461 training and 20,821 testing complaints
+with the same 4.74% crash rate. The code asserts that no complaint ID appears in
+both sets and that the test set matches the one Naive Bayes was scored on, row
+for row. The sets must be disjoint because a model scored on rows it learned
+from is being asked to remember rather than to generalise, and the score it
+reports would not hold up on any new complaint. For the same reason the settings
+were chosen by 5-fold cross-validation within the training set, and the test set
+was touched only once.</p>
+
+<figure>
+  <img src="figures/reg_log_train.png" alt="The logistic regression training set">
+  <figcaption><b>The logistic regression training set.</b> 62,461 complaints, three-quarters of the total. They are used both to fit the model and, through cross-validation, to choose its settings.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/reg_log_test.png" alt="The logistic regression testing set">
+  <figcaption><b>The logistic regression testing set.</b> 20,821 complaints, identical to the Naive Bayes test set. Every difference in the comparison below therefore comes from the model and not from the data.</figcaption>
+</figure>
+
 <div class="callout">
-  <p><b>This section is completed in Module 5.</b> The structure below is in
-  place and will be filled with the analysis, results, and visualisations for
-  Regression as the course reaches that module.</p>
+  <p><b>Data and code.</b>
+  Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a> &middot;
+  Cleaned source tables:
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a>,
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a></p>
+  <p>Linear regression: prepared data
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_linear_data.csv">reg_linear_data.csv</a> &middot;
+  training set <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_linear_train.csv">reg_linear_train.csv</a> &middot;
+  testing set <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_linear_test.csv">reg_linear_test.csv</a> &middot;
+  cross-validation grid <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_linear_cv.csv">reg_linear_cv.csv</a> &middot;
+  coefficients <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_linear_coefficients.csv">reg_linear_coefficients.csv</a> &middot;
+  test metrics <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_linear_results.csv">reg_linear_results.csv</a></p>
+  <p>Logistic regression: labelled data
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/nb_labeled_sample.csv">nb_labeled_sample.csv</a> &middot;
+  training sample <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_logistic_train_sample.csv">reg_logistic_train_sample.csv</a> &middot;
+  testing sample <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_logistic_test_sample.csv">reg_logistic_test_sample.csv</a> &middot;
+  cross-validation grid <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_logistic_cv.csv">reg_logistic_cv.csv</a> &middot;
+  coefficients <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_logistic_coefficients.csv">reg_logistic_coefficients.csv</a> &middot;
+  test metrics <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/reg_logistic_results.csv">reg_logistic_results.csv</a></p>
+  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/regression_analysis.py">regression_analysis.py</a>
+  &middot; <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/regression.ipynb">regression.ipynb</a></p>
 </div>
 
-<h3>Overview</h3>
-<p>Linear regression will model continuous outcomes from vehicle characteristics and equipment, with residuals examined to check whether the relationships found during exploration hold under a fitted model.</p>
+<h2>Code</h2>
 
-<h3>Data</h3>
-<p>The prepared data for this method will be drawn from the cleaned tables produced
-in Module 1, and the exact subset, encoding, and normalisation used here will be
-shown as a small sample image alongside links to both the raw and the cleaned files.</p>
+<p>The analysis is Python, in
+<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/regression_analysis.py">regression_analysis.py</a>, using
+scikit-learn. Linear regression uses <code>LinearRegression</code> and, for the
+penalised variant, <code>Ridge</code>, each inside a pipeline with
+<code>StandardScaler</code> so that the penalty treats every input on the same
+scale. Cross-validation uses <code>KFold</code> with five folds. Logistic
+regression uses <code>LogisticRegression</code> with the
+<code>liblinear</code> solver on the sparse word-count matrix from
+<code>CountVectorizer</code>, tuned with <code>StratifiedKFold</code>. The
+script refits both Naive Bayes models from Part 3 on the same matrix and
+confirms they reproduce the published Part 3 results exactly before comparing
+against them.</p>
+
+<h2>Results</h2>
+
+<h3>Linear regression: choosing the settings</h3>
+
+<p>Two settings were chosen by cross-validation on the training vehicles: which
+group of inputs the model may use, and the ridge penalty alpha, where alpha = 0
+is plain least squares. The baseline is a model that ignores every input and
+predicts the average crash rate.</p>
+
+<figure>
+  <img src="figures/reg_fig_linear_cv.png" alt="Cross-validated error for every feature set and penalty">
+  <figcaption><b>Cross-validated error for every feature set and penalty.</b> Crash-test ratings on their own never beat the baseline by more than a sliver, at every penalty tried. The lowest error comes from using every input with a fairly strong penalty, alpha = 100, which is the model carried forward.</figcaption>
+</figure>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Inputs allowed</th><th>Best CV RMSE</th><th>at alpha</th><th>Reading</th></tr></thead>
+  <tbody>
+    <tr><td>Baseline: predict the average</td><td>5.53</td><td>&mdash;</td><td>the bar to beat</td></tr>
+    <tr><td>Crash-test ratings only</td><td>5.37</td><td>30</td><td>3% better than guessing</td></tr>
+    <tr><td>Ratings + equipment + segment</td><td>5.17</td><td>100</td><td>6% better</td></tr>
+    <tr><td>Ownership record only</td><td>5.07</td><td>30</td><td>8% better</td></tr>
+    <tr><td><b>Everything</b></td><td><b>4.86</b></td><td><b>100</b></td><td><b>12% better; cross-validated R&sup2; 0.22</b></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Linear regression: the held-out test</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model, scored once on the 55 test vehicles</th><th>RMSE</th><th>MAE</th><th>R&sup2;</th></tr></thead>
+  <tbody>
+    <tr><td><b>Chosen model: everything, ridge alpha = 100</b></td><td><b>3.39</b></td><td><b>2.56</b></td><td><b>&minus;0.03</b></td></tr>
+    <tr><td>Plain <code>LinearRegression</code>, same inputs</td><td>4.18</td><td>3.10</td><td>&minus;0.56</td></tr>
+    <tr><td>Baseline: training-set average</td><td>3.58</td><td>3.06</td><td>&minus;0.14</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Errors are in percentage points of crash rate. The chosen model lands on
+average 2.6 points from the true crash rate, against 3.1 for the baseline, a 16%
+reduction in absolute error. Its R&sup2; is nonetheless slightly below zero,
+and the reason matters. R&sup2; on a test set compares the model against the
+<i>test set's own</i> average, which no model can know in advance. These 55
+vehicles happen to have a lower average crash rate than the training vehicles
+(5.5% against 6.8%) and far less spread (a standard deviation of 3.4 points
+against 5.5), so even the honest baseline scores &minus;0.14. Against that bar
+the chosen model is clearly better, but it explains essentially none of the
+variation in crash rate from one test vehicle to the next. Plain least squares,
+without the penalty, does worse than the baseline on the test vehicles.
+Cross-validation had already ranked it well behind the penalised model (an RMSE
+of 5.31 against 4.86), and the test confirms why the penalty was needed: with
+seventeen correlated inputs and only 163 rows, the unpenalised coefficients
+chase noise.</p>
+
+<figure>
+  <img src="figures/reg_fig_pred_vs_actual.png" alt="Predicted against actual crash rate on the test vehicles">
+  <figcaption><b>Predicted against actual crash rate on the test vehicles.</b> Perfect predictions would lie on the diagonal. The points form a loose cloud around it with the predictions compressed toward the middle, the typical shape of a model with a real but weak signal.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/reg_fig_linear_coefficients.png" alt="Which inputs move the predicted crash rate">
+  <figcaption><b>Which inputs move the predicted crash rate.</b> Each bar is the change in predicted crash rate for a one-standard-deviation increase in that input, so bars are directly comparable. Complaint volume, front-crash stars and vehicle age push the prediction down; sedan, hybrid and electric body types push it up.</figcaption>
+</figure>
+
+<p><b>Two coefficients in plain words.</b> Coefficients are read from the
+chosen model in each input's own units.</p>
 <ul>
-  <li>Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a></li>
-  <li>Cleaned data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/clean">data/clean/</a></li>
+  <li><b>Mean vehicle age at incident: &minus;0.47 points per year.</b> Holding
+      everything else fixed, a model-year whose problems typically surface one
+      year later in the vehicle's life has a crash rate about half a percentage
+      point lower. Faults that appear in older vehicles are more often wear
+      &mdash; leaks, electrics, corrosion &mdash; and less often collisions.</li>
+  <li><b>Front-crash stars: &minus;1.65 points per star.</b> A vehicle with one
+      more front-crash star has a crash rate about 1.7 points lower, all else
+      equal. Side-crash stars point the opposite way (+2.66 per star), however,
+      so the laboratory ratings disagree with each other about the direction
+      of the effect. With most vehicles rated four or five stars, these
+      coefficients rest on very little variation and should not be read as
+      causal.</li>
 </ul>
 
-<h3>Code</h3>
-<p>The code for this section will be linked here once written. All project code is
-Python, using pandas and scikit-learn, and lives in
-<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code">the repository's code folder</a>.</p>
+<h3>Logistic regression: choosing the settings</h3>
 
-<h3>Results</h3>
-<div class="placeholder">
-  <p>Results, parameter choices, accuracy measures, and visualisations for Regression
-  will appear in this area, together with a discussion of what they mean for the
-  question of how well crash-test ratings predict real-world vehicle problems.</p>
+<p>Two settings were chosen by 5-fold cross-validation on the 62,461 training
+complaints: the inverse regularisation strength C (smaller C means a stronger
+penalty) and whether the rare Crash class is reweighted. The selection
+criterion was F1 on the Crash class rather than accuracy, because on a 4.7%
+class accuracy rewards a model for saying "no crash" to everything.</p>
+
+<figure>
+  <img src="figures/reg_fig_logistic_cv.png" alt="Cross-validated F1 and accuracy across both settings">
+  <figcaption><b>Cross-validated F1 and accuracy across both settings.</b> Without reweighting, F1 peaks at C = 1 with 0.714; reweighting the rare class raises recall but adds so many false alarms that F1 never exceeds 0.61. The test set played no part in this choice.</figcaption>
+</figure>
+
+<h3>Logistic regression: the held-out test, against Naive Bayes</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model, same 20,821 test complaints</th><th>Accuracy</th><th>Precision (Crash)</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td><b>Logistic regression (C = 1)</b></td><td><b>97.84%</b></td><td><b>0.830</b></td><td>0.684</td><td><b>0.750</b></td></tr>
+    <tr><td>Bernoulli NB (Part 3)</td><td>95.17%</td><td>0.494</td><td>0.806</td><td>0.613</td></tr>
+    <tr><td>Multinomial NB (Part 3)</td><td>94.41%</td><td>0.452</td><td><b>0.830</b></td><td>0.585</td></tr>
+    <tr><td>Majority-class baseline</td><td>95.26%</td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
 </div>
+
+<figure>
+  <img src="figures/reg_fig_logistic_confusion.png" alt="Confusion matrix, logistic regression">
+  <figcaption><b>Confusion matrix, logistic regression.</b> Of 987 genuine crash complaints, 675 are found and 312 are missed. Only 138 of the 19,834 non-crash complaints are wrongly flagged, against 995 for Multinomial Naive Bayes on the same test set.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/reg_fig_vs_nb.png" alt="Logistic regression and the two Naive Bayes models on identical data">
+  <figcaption><b>Logistic regression and the two Naive Bayes models on identical data.</b> Logistic regression is the only one of the three to beat the majority-class baseline on accuracy, and it wins clearly on precision and F1. Naive Bayes still finds more crashes, so the trade is fewer false alarms for some missed crashes.</figcaption>
+</figure>
+
+<p><b>Logistic regression beats both Naive Bayes models</b>, and the margin is
+large. Against the better of the two, Bernoulli, F1 rises from 0.613 to 0.750
+(+0.137, about 22% higher), precision from 0.494 to 0.830, and accuracy from
+95.17% to 97.84%, the only figure on this site so far to clear the 95.26%
+baseline. The cost is recall: logistic regression finds 68% of crashes where
+Naive Bayes found 81&ndash;83%. The difference has a clear cause. Naive Bayes
+treats each word as independent evidence and counts it in full, so a dozen
+weakly related words can stack up into a confident wrong answer. Logistic
+regression fits all the weights together and discounts words that only ever
+appear alongside stronger ones, which is precisely what removes most of the
+false alarms.</p>
+
+<figure>
+  <img src="figures/reg_fig_logistic_odds.png" alt="Words that multiply or divide the odds of a crash">
+  <figcaption><b>Words that multiply or divide the odds of a crash.</b> Each bar is the odds ratio for one more use of that word in a narrative. Collision vocabulary multiplies the odds many times over, while words describing near-misses, wear and damage without impact divide them.</figcaption>
+</figure>
+
+<p><b>One coefficient in terms of odds.</b> The coefficient for
+<i>pole</i> is 2.27, so each use of the word multiplies the odds that the
+complaint describes a crash by <i>e</i><sup>2.27</sup> &asymp; 9.7. The model's
+intercept is &minus;3.61, which corresponds to a probability of about 2.6% for a
+narrative containing none of the informative words. A single mention of
+<i>pole</i> raises the odds from 0.027 to 0.26, which is a probability of about
+21%; the word alone moves a complaint from very unlikely to plausible, and one
+or two more crash words push it over the 0.5 threshold. The words that divide
+the odds are as revealing: <i>nearly</i>, <i>fortunately</i> and
+<i>pothole</i> each cut the odds by a factor of four to eight, because they are
+the language of incidents that stopped short of a collision.</p>
+
+<h2>Conclusions</h2>
+
+<p>The clearest lesson from this tab is that the crash rate of a vehicle is
+hard to predict from anything a buyer can see. Star ratings on their own did
+little better than guessing the average, and even with every rating, every
+piece of equipment, the body type and the vehicle's own complaint history, the
+best model explained only a modest share of the differences between vehicles
+and none of the differences among the vehicles it was tested on. A
+higher-rated vehicle is not reliably one whose reported problems end in
+collisions less often, and the ratings did not even agree with one another
+about which way the effect runs.</p>
+
+<p>What did carry some signal is the shape of a vehicle's ownership record.
+Vehicles with many complaints tend to have a lower share of crash complaints,
+because large complaint volumes are dominated by everyday faults rather than
+collisions, and vehicles whose problems arrive later in life tend to have
+fewer crashes among them. Sedans, hybrids and electric vehicles carry higher
+crash shares than sport-utility vehicles and minivans once everything else is
+held equal, matching what the exploratory analysis first suggested.</p>
+
+<p>The complaint narrative, by contrast, is highly predictable. Reading the
+owner's words with a method that weighs them all together identifies two
+crashes in three while raising very few false alarms: of every six complaints
+it flags, five genuinely involve a crash. That is a large improvement on the
+counting approach from Part 3, and it turns the narrative field from something
+that must be read by hand into something that could reliably sort a
+regulator's in-tray, putting the reports most likely to describe a collision at
+the top.</p>
+
+<p>Taken together, the two halves repeat the pattern seen in the Decision Trees
+tab. What happened in a particular incident is recorded clearly in the words
+of the person it happened to; what kind of vehicle it happened in says very
+little about it. The information that best predicts real-world harm is not the
+laboratory score printed on the window sticker but the testimony that
+accumulates after the vehicle is sold.</p>
 </main>
 <footer><div class="wrap">
   <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>

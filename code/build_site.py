@@ -12,9 +12,10 @@ TABS = [
     ("pca.html", "PCA"),
     ("naivebayes.html", "NaiveBayes"),
     ("dectrees.html", "DecTrees"),
-    ("svms.html", "SVMs"),
     ("regression.html", "Regression"),
-    ("nn.html", "NN"),
+    ("adaboost.html", "AdaBoost"),
+    ("gradientboosting.html", "GradientBoosting"),
+    ("xgboost.html", "XGBoost"),
     ("conclusions.html", "Conclusions"),
     ("about.html", "About Me"),
 ]
@@ -74,38 +75,11 @@ def figure(src, title, caption):
 </figure>"""
 
 
-def stub(method, module, overview, plan):
-    """Placeholder tab carrying the required Overview / Data / Code / Results skeleton."""
+def empty_tab(method):
+    """A tab that exists in the navigation but has no content yet."""
     return f"""<h2>{method}</h2>
-<p class="lede">{overview}</p>
-<div class="callout">
-  <p><b>This section is completed in Module {module}.</b> The structure below is in
-  place and will be filled with the analysis, results, and visualisations for
-  {method} as the course reaches that module.</p>
-</div>
-
-<h3>Overview</h3>
-<p>{plan}</p>
-
-<h3>Data</h3>
-<p>The prepared data for this method will be drawn from the cleaned tables produced
-in Module 1, and the exact subset, encoding, and normalisation used here will be
-shown as a small sample image alongside links to both the raw and the cleaned files.</p>
-<ul>
-  <li>Raw data: <a href="{BLOB}/data/raw">data/raw/</a></li>
-  <li>Cleaned data: <a href="{BLOB}/data/clean">data/clean/</a></li>
-</ul>
-
-<h3>Code</h3>
-<p>The code for this section will be linked here once written. All project code is
-Python, using pandas and scikit-learn, and lives in
-<a href="{BLOB}/code">the repository's code folder</a>.</p>
-
-<h3>Results</h3>
 <div class="placeholder">
-  <p>Results, parameter choices, accuracy measures, and visualisations for {method}
-  will appear in this area, together with a discussion of what they mean for the
-  question of how well crash-test ratings predict real-world vehicle problems.</p>
+  <p>This section has not been added yet.</p>
 </div>"""
 
 
@@ -189,6 +163,28 @@ dependence on human reporting is both its weakness and its reach. No laboratory
 could afford to drive a million vehicles for a decade, but a million owners do
 it anyway, and some fraction of them write down what went wrong. The resulting
 archive is messy, uneven and irreplaceable.</p>
+
+<p>The chain does not end when a recall is announced, and its final link is the
+weakest one. A recall obliges a manufacturer to offer a free repair, but it
+cannot oblige anyone to accept it. Notices travel by post to the registered
+owner, and a vehicle that has changed hands two or three times may be registered
+to someone who has since moved, or may never have been linked to its current
+driver at all. Many owners who do receive a notice set it aside, because the car
+still starts, still drives, and shows no sign of the fault being described. A
+meaningful share of recalled vehicles therefore remain unrepaired years after
+the campaign began, still carrying a defect that the manufacturer has formally
+admitted and has already paid to fix. Some of those defects are cosmetic, but
+others involve airbags that can rupture, brakes that can fail, or wiring that
+can catch fire. Those vehicles drift steadily into the used market, where they
+are bought by people who were never sent the notice in the first place. Nothing
+in a private sale requires an open recall to be disclosed, and a buyer rarely
+thinks to ask. The information is public and free to look up by vehicle
+identification number, yet it sits in a separate place from the price, the
+mileage and the safety stars that a buyer actually compares. A recall that is
+never carried out protects nobody, however carefully the fault was investigated
+and however promptly the notice was issued, and the gap between a fault being
+known and a fault being fixed is one more place where official safety
+information fails to reach the people it was written for.</p>
 
 <p>These two records describe the same vehicles and almost never meet. One is
 generated before a car is sold, under laboratory conditions, and is used to
@@ -692,6 +688,9 @@ transformation, part-way through it, and after it.</p>
   <a href="{RAW_GH}/data/clean/cluster_assignments.csv">cluster_assignments.csv</a> &middot;
   Silhouette sweep:
   <a href="{RAW_GH}/data/clean/kmeans_silhouette_sweep.csv">kmeans_silhouette_sweep.csv</a></p>
+  <p>Raw data: <a href="{BLOB}/data/raw">data/raw/</a> (all four sources, exactly as
+  gathered) &middot; cleaned source table:
+  <a href="{RAW_GH}/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a></p>
   <p>Code: <a href="{BLOB}/code/clustering_analysis.py">clustering_analysis.py</a>
   (full script) &middot;
   <a href="{BLOB}/notebooks/clustering.ipynb">clustering.ipynb</a>
@@ -960,6 +959,9 @@ covariance matrix, and every variable gets an equal vote.</p>
   Eigenvalues: <a href="{RAW_GH}/data/clean/pca_eigenvalues.csv">pca_eigenvalues.csv</a> &middot;
   Loadings: <a href="{RAW_GH}/data/clean/pca_components.csv">pca_components.csv</a> &middot;
   Vehicle scores: <a href="{RAW_GH}/data/clean/pca_scores.csv">pca_scores.csv</a></p>
+  <p>Raw data: <a href="{BLOB}/data/raw">data/raw/</a> (all four sources, exactly as
+  gathered) &middot; cleaned source table:
+  <a href="{RAW_GH}/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a></p>
   <p>Code: <a href="{BLOB}/code/pca_analysis.py">pca_analysis.py</a>
   (full script) &middot;
   <a href="{BLOB}/notebooks/pca.ipynb">pca.ipynb</a>
@@ -1238,6 +1240,11 @@ is a subtle but real form of the same mistake.</p>
   Testing sample: <a href="{RAW_GH}/data/clean/nb_test_sample.csv">nb_test_sample.csv</a> &middot;
   Metrics: <a href="{RAW_GH}/data/clean/nb_results.csv">nb_results.csv</a> &middot;
   Smoothing sweep: <a href="{RAW_GH}/data/clean/nb_smoothing_sweep.csv">nb_smoothing_sweep.csv</a></p>
+  <p>Raw data: <a href="{BLOB}/data/raw">data/raw/</a>, including the complaints
+  exactly as returned by the API,
+  <a href="{RAW_GH}/data/raw/complaints_raw.csv.gz">complaints_raw.csv.gz</a> &middot;
+  cleaned source table:
+  <a href="{RAW_GH}/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a></p>
   <p>Code: <a href="{BLOB}/code/naive_bayes_analysis.py">naive_bayes_analysis.py</a>
   &middot; <a href="{BLOB}/notebooks/naive_bayes.ipynb">naive_bayes.ipynb</a></p>
 </div>
@@ -1285,7 +1292,7 @@ the per-class figures carry the real information here.</p>
 {figure("nb_fig_confusion_bnb.png",
         "Confusion matrix, Bernoulli Naive Bayes",
         "Bernoulli flags fewer complaints overall, so it makes fewer false "
-        "positives and reaches higher precision, at the cost of missing more "
+        "positives and reaches higher precision. The cost is that it misses more "
         "genuine crashes than the multinomial model.")}
 
 {figure("nb_fig_model_compare.png",
@@ -1500,6 +1507,10 @@ sweep below shows exactly that happening.</p>
   Testing sample: <a href="{RAW_GH}/data/clean/dt_test_sample.csv">dt_test_sample.csv</a> &middot;
   Worked split example: <a href="{RAW_GH}/data/clean/dt_information_gain.csv">dt_information_gain.csv</a> &middot;
   Metrics: <a href="{RAW_GH}/data/clean/dt_results.csv">dt_results.csv</a></p>
+  <p>Raw data: <a href="{BLOB}/data/raw">data/raw/</a> (all four sources, exactly as
+  gathered) &middot; cleaned source tables:
+  <a href="{RAW_GH}/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a>,
+  <a href="{RAW_GH}/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a></p>
   <p>Code: <a href="{BLOB}/code/decision_tree_analysis.py">decision_tree_analysis.py</a>
   &middot; <a href="{BLOB}/notebooks/decision_trees.ipynb">decision_trees.ipynb</a></p>
 </div>
@@ -1548,8 +1559,8 @@ line by line.</p>
 {figure("dt_fig_tree3.png",
         "Tree 3: Gini, depth 10, minimum 50 samples per leaf",
         "Allowing ten levels produces 170 leaves and raises recall to 0.70, "
-        "catching far more crashes, but accuracy collapses to 73% because it now "
-        "flags enormous numbers of ordinary complaints.")}
+        "catching far more crashes. Accuracy collapses to 73%, however, because "
+        "the tree now flags enormous numbers of ordinary complaints.")}
 
 {figure("dt_fig_confusion.png",
         "Confusion matrix for the best-scoring tree",
@@ -1607,6 +1618,701 @@ accuracy falls to 73%, well below simply guessing. A model can be made to look
 good on whichever measure is quoted, which is precisely why the confusion matrix,
 the baseline and the held-back test set all had to be reported together rather
 than any one of them alone.</p>
+"""
+
+REG_TAB = f"""<h2>Regression</h2>
+
+<p class="lede">Two questions, one for each kind of regression. Can a vehicle's
+ratings, equipment and record predict <i>how often</i> its owners' complaints
+involve a crash? And can a single complaint be classified as a crash or not
+from the owner's own words, more reliably than Naive Bayes managed?</p>
+
+<h2>Overview</h2>
+
+<p><b>Linear regression</b> predicts a number. It assumes the target can be
+written as a weighted sum of the inputs plus a constant,
+<i>y</i> = <i>b</i><sub>0</sub> + <i>b</i><sub>1</sub><i>x</i><sub>1</sub> +
+<i>b</i><sub>2</sub><i>x</i><sub>2</sub> + &hellip;, and it chooses the weights
+that make the squared distances between the predictions and the true values as
+small as possible. Those distances are the residuals, and squaring them means a
+few large misses cost far more than many small ones. Each weight, or
+coefficient, has a direct reading: it is the change in the prediction when that
+one input rises by one unit and every other input is held fixed. That
+readability is the method's great strength, and also its trap, because when two
+inputs move together the model cannot tell which one deserves the credit and
+the individual coefficients become unstable. A <b>ridge penalty</b> addresses
+this by adding a cost proportional to the squared size of the coefficients,
+which pulls them toward zero and shares credit between correlated inputs; the
+strength of that penalty, alpha, is a setting to be chosen.</p>
+
+<p><b>Logistic regression</b> predicts which of two classes a record belongs
+to. It begins exactly as linear regression does, by forming a weighted sum of
+the inputs, but that linear score <i>z</i> can be any number from minus to plus
+infinity and is not yet a probability. The <b>sigmoid function</b>,
+&sigma;(<i>z</i>) = 1 / (1 + <i>e</i><sup>&minus;<i>z</i></sup>), squeezes
+the score into the range 0 to 1: large positive scores approach 1, large
+negative scores approach 0, and a score of exactly 0 maps to 0.5. That number is
+read as the probability of the positive class, and it becomes a class by
+comparing it with a threshold, normally 0.5. Because the weights are fitted by
+maximising the likelihood of the observed labels rather than by minimising
+squared error, each coefficient has a precise meaning on the <b>odds</b> scale:
+raising an input by one unit multiplies the odds of the positive class by
+<i>e</i><sup><i>b</i></sup>.</p>
+
+{figure("reg_concept_linear_vs_logistic.png",
+        "What each kind of regression predicts",
+        "Linear regression fits a straight line through numeric targets, and the "
+        "grey residuals are the errors it minimises. Logistic regression fits an "
+        "S-shaped curve to points that sit at 0 or 1, and its output is a "
+        "probability of belonging to class 1.")}
+
+{figure("reg_concept_sigmoid.png",
+        "How logistic regression turns a score into a class",
+        "The linear score is passed through the sigmoid to become a probability, "
+        "and anything at or above 0.5 is predicted as Crash. The same score, "
+        "exponentiated, is the odds, which is why each coefficient acts as a "
+        "multiplier on the odds.")}
+
+<p>The two differ in what they predict, how they are fitted and how they are
+judged. Linear regression outputs a number, minimises squared error, and is
+judged by how far its predictions land from the truth (RMSE, MAE) and how much
+of the variation it explains (R&sup2;). Logistic regression outputs a
+probability, maximises likelihood, and is judged like any classifier, with a
+confusion matrix. Both are linear in the inputs, which keeps them fast,
+transparent and hard to overfit, and both are blind to interactions unless
+those are added by hand.</p>
+
+<p><b>How they are used here.</b> Linear regression takes the 218 vehicles
+whose complaint record is large enough to trust and asks whether their crash
+rate can be predicted from what a buyer can see in advance &mdash; star ratings,
+rollover probability, standard equipment, body type &mdash; together with the
+shape of their complaint record. Logistic regression returns to the task
+Naive Bayes attempted in Part 3, classifying each complaint as a crash or not
+from its narrative, on exactly the same complaints, words and test set, so the
+two text classifiers can be compared directly.</p>
+
+<h2>Data Prep</h2>
+
+<p>Both models are supervised, so both need <b>labelled data</b>: every row must
+carry the answer the model is trained to reproduce. The two models need
+different kinds of answer. Linear regression needs a <b>numeric target</b>,
+and logistic regression needs a <b>two-class label</b>.</p>
+
+<h3>Linear regression: one row per vehicle</h3>
+
+<p>The target is <code>crash_rate_pct</code>, the percentage of a model-year's
+complaints that involved a crash, taken from the joined model-year table built
+in Module 1. Model-years with fewer than 20 complaints were removed first,
+because a rate computed from a handful of reports is mostly noise: one vehicle
+with seven complaints showed a crash rate of 43%. That leaves <b>218
+model-years</b>. Seventeen numeric inputs were used:</p>
+<ul>
+  <li><b>Crash-test ratings:</b> overall, front-crash, side-crash and rollover
+      stars, and rollover probability in percentage points.</li>
+  <li><b>Equipment:</b> whether forward-collision warning and lane-departure
+      warning are standard (0 or 1).</li>
+  <li><b>Body segment:</b> categorical, so it was one-hot encoded into six 0/1
+      columns with SUV as the reference level, which means each segment
+      coefficient reads as "compared with an SUV".</li>
+  <li><b>Ownership record:</b> mean vehicle age at incident, median days to
+      report, and the logarithms of complaint and recall counts, which span
+      three orders of magnitude.</li>
+</ul>
+<p>Crash, injury and severity counts were deliberately left out. They are
+built from the same reports as the target, so including them would let the
+model read the answer instead of predicting it.</p>
+
+{figure("reg_lin_sample.png",
+        "The linear regression data",
+        "One row per model-year, with the numeric target in the final column. A "
+        "subset of the seventeen input columns is shown; the full file is linked "
+        "below.")}
+
+<p>The rows were split <b>75/25 at random with a fixed seed</b> into 163
+training and 55 testing vehicles. The split is not stratified because the
+target is a number rather than a class. The code checks that no make, model and
+year appears in both sets. That separation is what makes the test meaningful: a
+model scored on vehicles it was fitted to would be rewarded for memorising their
+crash rates rather than for predicting new ones. Every setting was then chosen with
+<b>5-fold cross-validation inside the 163 training vehicles</b>; the 55 test
+vehicles were used once, at the very end.</p>
+
+{figure("reg_lin_train.png",
+        "The linear regression training set",
+        "163 model-years. The coefficients, the choice of features and the ridge "
+        "penalty all come from these rows alone.")}
+
+{figure("reg_lin_test.png",
+        "The linear regression testing set",
+        "55 model-years never seen while fitting or tuning. Every error figure "
+        "reported below for linear regression is measured on these.")}
+
+<h3>Logistic regression: one row per complaint</h3>
+
+<p>Logistic regression uses <b>exactly the same data as the Naive Bayes
+tab</b>: the 83,282 complaints with narratives of at least five words, the label
+<code>Crash</code> or <code>No crash</code> taken from the crash field on the
+federal complaint form, and the same word-count matrix &mdash; English stop words
+removed, terms in fewer than five documents dropped, the 6,000 most frequent
+kept. The vocabulary is learned from the training set only and then applied to
+the test set unchanged.</p>
+
+{figure("reg_log_sample.png",
+        "The logistic regression data",
+        "Each row is one complaint with its narrative and its two-class label. "
+        "Only 4.74% of the labels are Crash, which shapes how the results have to "
+        "be read.")}
+
+<p>The split is the Naive Bayes split reproduced exactly: <b>75/25, stratified
+on the label, same seed</b>, giving 62,461 training and 20,821 testing complaints
+with the same 4.74% crash rate. The code asserts that no complaint ID appears in
+both sets and that the test set matches the one Naive Bayes was scored on, row
+for row. The sets must be disjoint because a model scored on rows it learned
+from is being asked to remember rather than to generalise, and the score it
+reports would not hold up on any new complaint. For the same reason the settings
+were chosen by 5-fold cross-validation within the training set, and the test set
+was touched only once.</p>
+
+{figure("reg_log_train.png",
+        "The logistic regression training set",
+        "62,461 complaints, three-quarters of the total. They are used both to fit "
+        "the model and, through cross-validation, to choose its settings.")}
+
+{figure("reg_log_test.png",
+        "The logistic regression testing set",
+        "20,821 complaints, identical to the Naive Bayes test set. Every "
+        "difference in the comparison below therefore comes from the model and "
+        "not from the data.")}
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Raw data: <a href="{BLOB}/data/raw">data/raw/</a> &middot;
+  Cleaned source tables:
+  <a href="{RAW_GH}/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a>,
+  <a href="{RAW_GH}/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a></p>
+  <p>Linear regression: prepared data
+  <a href="{RAW_GH}/data/clean/reg_linear_data.csv">reg_linear_data.csv</a> &middot;
+  training set <a href="{RAW_GH}/data/clean/reg_linear_train.csv">reg_linear_train.csv</a> &middot;
+  testing set <a href="{RAW_GH}/data/clean/reg_linear_test.csv">reg_linear_test.csv</a> &middot;
+  cross-validation grid <a href="{RAW_GH}/data/clean/reg_linear_cv.csv">reg_linear_cv.csv</a> &middot;
+  coefficients <a href="{RAW_GH}/data/clean/reg_linear_coefficients.csv">reg_linear_coefficients.csv</a> &middot;
+  test metrics <a href="{RAW_GH}/data/clean/reg_linear_results.csv">reg_linear_results.csv</a></p>
+  <p>Logistic regression: labelled data
+  <a href="{RAW_GH}/data/clean/nb_labeled_sample.csv">nb_labeled_sample.csv</a> &middot;
+  training sample <a href="{RAW_GH}/data/clean/reg_logistic_train_sample.csv">reg_logistic_train_sample.csv</a> &middot;
+  testing sample <a href="{RAW_GH}/data/clean/reg_logistic_test_sample.csv">reg_logistic_test_sample.csv</a> &middot;
+  cross-validation grid <a href="{RAW_GH}/data/clean/reg_logistic_cv.csv">reg_logistic_cv.csv</a> &middot;
+  coefficients <a href="{RAW_GH}/data/clean/reg_logistic_coefficients.csv">reg_logistic_coefficients.csv</a> &middot;
+  test metrics <a href="{RAW_GH}/data/clean/reg_logistic_results.csv">reg_logistic_results.csv</a></p>
+  <p>Code: <a href="{BLOB}/code/regression_analysis.py">regression_analysis.py</a>
+  &middot; <a href="{BLOB}/notebooks/regression.ipynb">regression.ipynb</a></p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is Python, in
+<a href="{BLOB}/code/regression_analysis.py">regression_analysis.py</a>, using
+scikit-learn. Linear regression uses <code>LinearRegression</code> and, for the
+penalised variant, <code>Ridge</code>, each inside a pipeline with
+<code>StandardScaler</code> so that the penalty treats every input on the same
+scale. Cross-validation uses <code>KFold</code> with five folds. Logistic
+regression uses <code>LogisticRegression</code> with the
+<code>liblinear</code> solver on the sparse word-count matrix from
+<code>CountVectorizer</code>, tuned with <code>StratifiedKFold</code>. The
+script refits both Naive Bayes models from Part 3 on the same matrix and
+confirms they reproduce the published Part 3 results exactly before comparing
+against them.</p>
+
+<h2>Results</h2>
+
+<h3>Linear regression: choosing the settings</h3>
+
+<p>Two settings were chosen by cross-validation on the training vehicles: which
+group of inputs the model may use, and the ridge penalty alpha, where alpha = 0
+is plain least squares. The baseline is a model that ignores every input and
+predicts the average crash rate.</p>
+
+{figure("reg_fig_linear_cv.png",
+        "Cross-validated error for every feature set and penalty",
+        "Crash-test ratings on their own never beat the baseline by more than a "
+        "sliver, at every penalty tried. The lowest error comes from using every "
+        "input with a fairly strong penalty, alpha = 100, which is the model "
+        "carried forward.")}
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Inputs allowed</th><th>Best CV RMSE</th><th>at alpha</th><th>Reading</th></tr></thead>
+  <tbody>
+    <tr><td>Baseline: predict the average</td><td>5.53</td><td>&mdash;</td><td>the bar to beat</td></tr>
+    <tr><td>Crash-test ratings only</td><td>5.37</td><td>30</td><td>3% better than guessing</td></tr>
+    <tr><td>Ratings + equipment + segment</td><td>5.17</td><td>100</td><td>6% better</td></tr>
+    <tr><td>Ownership record only</td><td>5.07</td><td>30</td><td>8% better</td></tr>
+    <tr><td><b>Everything</b></td><td><b>4.86</b></td><td><b>100</b></td><td><b>12% better; cross-validated R&sup2; 0.22</b></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Linear regression: the held-out test</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model, scored once on the 55 test vehicles</th><th>RMSE</th><th>MAE</th><th>R&sup2;</th></tr></thead>
+  <tbody>
+    <tr><td><b>Chosen model: everything, ridge alpha = 100</b></td><td><b>3.39</b></td><td><b>2.56</b></td><td><b>&minus;0.03</b></td></tr>
+    <tr><td>Plain <code>LinearRegression</code>, same inputs</td><td>4.18</td><td>3.10</td><td>&minus;0.56</td></tr>
+    <tr><td>Baseline: training-set average</td><td>3.58</td><td>3.06</td><td>&minus;0.14</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Errors are in percentage points of crash rate. The chosen model lands on
+average 2.6 points from the true crash rate, against 3.1 for the baseline, a 16%
+reduction in absolute error. Its R&sup2; is nonetheless slightly below zero,
+and the reason matters. R&sup2; on a test set compares the model against the
+<i>test set's own</i> average, which no model can know in advance. These 55
+vehicles happen to have a lower average crash rate than the training vehicles
+(5.5% against 6.8%) and far less spread (a standard deviation of 3.4 points
+against 5.5), so even the honest baseline scores &minus;0.14. Against that bar
+the chosen model is clearly better, but it explains essentially none of the
+variation in crash rate from one test vehicle to the next. Plain least squares,
+without the penalty, does worse than the baseline on the test vehicles.
+Cross-validation had already ranked it well behind the penalised model (an RMSE
+of 5.31 against 4.86), and the test confirms why the penalty was needed: with
+seventeen correlated inputs and only 163 rows, the unpenalised coefficients
+chase noise.</p>
+
+{figure("reg_fig_pred_vs_actual.png",
+        "Predicted against actual crash rate on the test vehicles",
+        "Perfect predictions would lie on the diagonal. The points form a loose "
+        "cloud around it with the predictions compressed toward the middle, the "
+        "typical shape of a model with a real but weak signal.")}
+
+{figure("reg_fig_linear_coefficients.png",
+        "Which inputs move the predicted crash rate",
+        "Each bar is the change in predicted crash rate for a one-standard-deviation "
+        "increase in that input, so bars are directly comparable. Complaint "
+        "volume, front-crash stars and vehicle age push the prediction down; "
+        "sedan, hybrid and electric body types push it up.")}
+
+<p><b>Two coefficients in plain words.</b> Coefficients are read from the
+chosen model in each input's own units.</p>
+<ul>
+  <li><b>Mean vehicle age at incident: &minus;0.47 points per year.</b> Holding
+      everything else fixed, a model-year whose problems typically surface one
+      year later in the vehicle's life has a crash rate about half a percentage
+      point lower. Faults that appear in older vehicles are more often wear
+      &mdash; leaks, electrics, corrosion &mdash; and less often collisions.</li>
+  <li><b>Front-crash stars: &minus;1.65 points per star.</b> A vehicle with one
+      more front-crash star has a crash rate about 1.7 points lower, all else
+      equal. Side-crash stars point the opposite way (+2.66 per star), however,
+      so the laboratory ratings disagree with each other about the direction
+      of the effect. With most vehicles rated four or five stars, these
+      coefficients rest on very little variation and should not be read as
+      causal.</li>
+</ul>
+
+<h3>Logistic regression: choosing the settings</h3>
+
+<p>Two settings were chosen by 5-fold cross-validation on the 62,461 training
+complaints: the inverse regularisation strength C (smaller C means a stronger
+penalty) and whether the rare Crash class is reweighted. The selection
+criterion was F1 on the Crash class rather than accuracy, because on a 4.7%
+class accuracy rewards a model for saying "no crash" to everything.</p>
+
+{figure("reg_fig_logistic_cv.png",
+        "Cross-validated F1 and accuracy across both settings",
+        "Without reweighting, F1 peaks at C = 1 with 0.714; reweighting the rare "
+        "class raises recall but adds so many false alarms that F1 never exceeds "
+        "0.61. The test set played no part in this choice.")}
+
+<h3>Logistic regression: the held-out test, against Naive Bayes</h3>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model, same 20,821 test complaints</th><th>Accuracy</th><th>Precision (Crash)</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td><b>Logistic regression (C = 1)</b></td><td><b>97.84%</b></td><td><b>0.830</b></td><td>0.684</td><td><b>0.750</b></td></tr>
+    <tr><td>Bernoulli NB (Part 3)</td><td>95.17%</td><td>0.494</td><td>0.806</td><td>0.613</td></tr>
+    <tr><td>Multinomial NB (Part 3)</td><td>94.41%</td><td>0.452</td><td><b>0.830</b></td><td>0.585</td></tr>
+    <tr><td>Majority-class baseline</td><td>95.26%</td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
+</div>
+
+{figure("reg_fig_logistic_confusion.png",
+        "Confusion matrix, logistic regression",
+        "Of 987 genuine crash complaints, 675 are found and 312 are missed. Only "
+        "138 of the 19,834 non-crash complaints are wrongly flagged, against 995 "
+        "for Multinomial Naive Bayes on the same test set.")}
+
+{figure("reg_fig_vs_nb.png",
+        "Logistic regression and the two Naive Bayes models on identical data",
+        "Logistic regression is the only one of the three to beat the "
+        "majority-class baseline on accuracy, and it wins clearly on precision and "
+        "F1. Naive Bayes still finds more crashes, so the trade is fewer false "
+        "alarms for some missed crashes.")}
+
+<p><b>Logistic regression beats both Naive Bayes models</b>, and the margin is
+large. Against the better of the two, Bernoulli, F1 rises from 0.613 to 0.750
+(+0.137, about 22% higher), precision from 0.494 to 0.830, and accuracy from
+95.17% to 97.84%, the only figure on this site so far to clear the 95.26%
+baseline. The cost is recall: logistic regression finds 68% of crashes where
+Naive Bayes found 81&ndash;83%. The difference has a clear cause. Naive Bayes
+treats each word as independent evidence and counts it in full, so a dozen
+weakly related words can stack up into a confident wrong answer. Logistic
+regression fits all the weights together and discounts words that only ever
+appear alongside stronger ones, which is precisely what removes most of the
+false alarms.</p>
+
+{figure("reg_fig_logistic_odds.png",
+        "Words that multiply or divide the odds of a crash",
+        "Each bar is the odds ratio for one more use of that word in a narrative. "
+        "Collision vocabulary multiplies the odds many times over, while words "
+        "describing near-misses, wear and damage without impact divide them.")}
+
+<p><b>One coefficient in terms of odds.</b> The coefficient for
+<i>pole</i> is 2.27, so each use of the word multiplies the odds that the
+complaint describes a crash by <i>e</i><sup>2.27</sup> &asymp; 9.7. The model's
+intercept is &minus;3.61, which corresponds to a probability of about 2.6% for a
+narrative containing none of the informative words. A single mention of
+<i>pole</i> raises the odds from 0.027 to 0.26, which is a probability of about
+21%; the word alone moves a complaint from very unlikely to plausible, and one
+or two more crash words push it over the 0.5 threshold. The words that divide
+the odds are as revealing: <i>nearly</i>, <i>fortunately</i> and
+<i>pothole</i> each cut the odds by a factor of four to eight, because they are
+the language of incidents that stopped short of a collision.</p>
+
+<h2>Conclusions</h2>
+
+<p>The clearest lesson from this tab is that the crash rate of a vehicle is
+hard to predict from anything a buyer can see. Star ratings on their own did
+little better than guessing the average, and even with every rating, every
+piece of equipment, the body type and the vehicle's own complaint history, the
+best model explained only a modest share of the differences between vehicles
+and none of the differences among the vehicles it was tested on. A
+higher-rated vehicle is not reliably one whose reported problems end in
+collisions less often, and the ratings did not even agree with one another
+about which way the effect runs.</p>
+
+<p>What did carry some signal is the shape of a vehicle's ownership record.
+Vehicles with many complaints tend to have a lower share of crash complaints,
+because large complaint volumes are dominated by everyday faults rather than
+collisions, and vehicles whose problems arrive later in life tend to have
+fewer crashes among them. Sedans, hybrids and electric vehicles carry higher
+crash shares than sport-utility vehicles and minivans once everything else is
+held equal, matching what the exploratory analysis first suggested.</p>
+
+<p>The complaint narrative, by contrast, is highly predictable. Reading the
+owner's words with a method that weighs them all together identifies two
+crashes in three while raising very few false alarms: of every six complaints
+it flags, five genuinely involve a crash. That is a large improvement on the
+counting approach from Part 3, and it turns the narrative field from something
+that must be read by hand into something that could reliably sort a
+regulator's in-tray, putting the reports most likely to describe a collision at
+the top.</p>
+
+<p>Taken together, the two halves repeat the pattern seen in the Decision Trees
+tab. What happened in a particular incident is recorded clearly in the words
+of the person it happened to; what kind of vehicle it happened in says very
+little about it. The information that best predicts real-world harm is not the
+laboratory score printed on the window sticker but the testimony that
+accumulates after the vehicle is sold.</p>
+"""
+
+ADA_TAB = f"""<h2>AdaBoost</h2>
+
+<p class="lede">The Decision Trees tab built single trees to predict crashes
+from a vehicle's attributes and found only a weak signal. This tab asks whether
+hundreds of deliberately tiny trees, each correcting the last, can extract more
+from exactly the same data.</p>
+
+<h2>Overview</h2>
+
+<p><b>Boosting</b> builds a strong model out of many weak ones by training them
+one after another, with each new model concentrating on the cases the earlier
+ones got wrong. It is easiest to understand by contrast with <b>bagging</b>, the
+idea behind random forests. Bagging draws many random samples of the training
+data, grows a full, independent tree on each, and lets them vote with equal
+weight; because the trees are built separately they can be built at the same
+time, and averaging them mainly reduces variance. Boosting is sequential: tree
+two cannot be built until tree one exists, because tree two is trained on data
+reweighted by tree one's mistakes. Each model is weak on its own, and boosting
+mainly reduces bias by adding them up.</p>
+
+{figure("ada_concept_bagging_vs_boosting.png",
+        "Bagging and boosting compared",
+        "Bagging trains full trees independently on random samples and gives each "
+        "an equal vote. Boosting trains small trees one after another on "
+        "reweighted data, and each tree's vote is weighted by how accurate it "
+        "was.")}
+
+<p><b>AdaBoost</b> (adaptive boosting) is the original boosting algorithm, and
+here its weak learners are <b>decision stumps</b>: trees with a single split,
+one question with two answers, such as "is the complaint about airbags?". A
+stump on its own is barely better than guessing, which is the point. Training
+proceeds in rounds:</p>
+<ul>
+  <li><b>Start</b> with a weight on every training row. Here the weights are
+      balanced so that the 4.7% of crash rows carry half the total weight,
+      the same correction the Part 3 tree used.</li>
+  <li><b>Fit a stump</b> that minimises the <i>weighted</i> error, so rows with
+      large weights count for more.</li>
+  <li><b>Score the stump.</b> Its weight in the final vote is
+      &alpha;<sub>m</sub> = learning rate &times; ln((1 &minus; error) / error).
+      A stump with low weighted error earns a large &alpha;; a stump no better
+      than a coin flip, at error 0.5, earns &alpha; = 0 and is ignored; a stump
+      worse than chance gets a negative &alpha;, so its vote is reversed.</li>
+  <li><b>Reweight the rows.</b> Every row the stump got wrong has its weight
+      multiplied by <i>e</i><sup>&alpha;</sup>, then all weights are rescaled to
+      sum to one. Misclassified rows therefore grow, and the next stump is
+      forced to pay attention to them.</li>
+  <li><b>Repeat</b> for the chosen number of rounds.</li>
+</ul>
+
+{figure("ada_concept_reweighting.png",
+        "Three real rounds of AdaBoost on a small example",
+        "Marker size shows each row's weight. The rows circled as mistakes in one "
+        "round grow before the next, so each new stump places its split where the "
+        "previous ones failed, and three weak stumps together classify 90% of the "
+        "points correctly.")}
+
+<p>The <b>final prediction is a weighted vote</b>: every stump votes +1 for
+Crash or &minus;1 for No crash, each vote is multiplied by that stump's
+&alpha;, and the votes are summed. A positive total means Crash. Accurate
+stumps therefore have a larger say than marginal ones. The total can also be
+compared against a cut-off other than zero, which turns out to matter on this
+data. The <b>learning rate</b> scales every &alpha; down: a smaller rate means
+each stump changes the ensemble less, so more rounds are needed, but the result
+is usually smoother.</p>
+
+{figure("ada_concept_alpha.png",
+        "How a stump's error becomes its say in the vote",
+        "Alpha is large when the weighted error is small, zero at an error of 0.5, "
+        "and negative beyond it. This single curve is what lets AdaBoost combine "
+        "learners of very different quality without any of them being chosen by "
+        "hand.")}
+
+<p><b>How it is used here.</b> The task, the 29 features and the train/test
+split are identical to the Decision Trees tab: predict whether a complaint
+involved a crash from the vehicle's age, rating, rollover probability,
+equipment, recall count, body segment and the component involved, without
+reading the narrative. Keeping everything identical means any difference from
+the Part 3 tree is due to boosting alone.</p>
+
+<h2>Data Prep</h2>
+
+<p>AdaBoost is supervised, so it needs <b>labelled data</b>; the label is the
+crash field on the federal complaint form, exactly as before. Joining each
+complaint to its rated vehicle leaves <b>80,615 labelled complaints</b>.</p>
+
+<p>scikit-learn's AdaBoost, like its trees, accepts <b>only numeric input</b>.
+Two of the eleven raw columns are text: the body segment (SUV, Sedan, Truck and
+so on) and the component the complaint concerns. Both were converted with
+<b>one-hot encoding</b>, which replaces one text column with one 0/1 column per
+category: a Sedan complaint gets a 1 in <code>seg_Sedan</code> and 0 in every
+other segment column. The component field has 41 categories, so the twelve
+most common were kept and the rest grouped as <code>cmp_OTHER</code> to stop
+the encoding from exploding. Nine numeric columns, seven segment columns and
+thirteen component columns make <b>29 numeric features</b>. The two images
+below show the step itself.</p>
+
+{figure("ada_sample_before.png",
+        "BEFORE encoding: two columns are still text",
+        "The segment and component columns hold words, which AdaBoost cannot "
+        "split on. Everything else is already numeric.")}
+
+{figure("ada_sample_encoded.png",
+        "AFTER one-hot encoding: every category is its own 0/1 column",
+        "Each complaint now has a 1 in exactly one segment column and one component "
+        "column, with zeros in the rest. A subset of the 29 columns is shown, with "
+        "the label still in the final column.")}
+
+<p>The train/test split is the Decision Trees split reproduced exactly:
+<b>75/25, stratified on the label, same seed</b>, giving 60,461 training and
+20,154 testing complaints, each with the same 4.72% crash rate. The code
+asserts that the sets share no rows and that the test set matches the Part 3
+test set row for row. The two must be disjoint because a boosted model, given
+enough rounds, can fit its training rows almost perfectly; scoring it on those
+same rows would report a skill it does not have.</p>
+
+<p>One more split was needed. AdaBoost has settings to choose, and choosing
+them on the test set would quietly turn the test set into training data. So
+<b>20% of the training set was held back as a validation set</b>, stratified
+the same way: the model was tuned by training on 48,368 rows and checking on
+12,093, and the test set was used once, after every choice was fixed.</p>
+
+{figure("ada_sample_train.png",
+        "The AdaBoost training set",
+        "60,461 complaints. During tuning, 12,093 of these were held out as the "
+        "validation set; the final model was then refitted on all of them.")}
+
+{figure("ada_sample_test.png",
+        "The AdaBoost testing set",
+        "20,154 complaints, identical to the Part 3 decision tree's test set. None "
+        "of them played any part in training, tuning or choosing the cut-off.")}
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Raw data: <a href="{BLOB}/data/raw">data/raw/</a> &middot;
+  Cleaned source tables:
+  <a href="{RAW_GH}/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a>,
+  <a href="{RAW_GH}/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a></p>
+  <p>Labelled data before encoding:
+  <a href="{RAW_GH}/data/clean/ada_labeled_before_encoding.csv">ada_labeled_before_encoding.csv</a> &middot;
+  after encoding: <a href="{RAW_GH}/data/clean/ada_labeled_encoded.csv">ada_labeled_encoded.csv</a> &middot;
+  training sample: <a href="{RAW_GH}/data/clean/ada_train_sample.csv">ada_train_sample.csv</a> &middot;
+  testing sample: <a href="{RAW_GH}/data/clean/ada_test_sample.csv">ada_test_sample.csv</a></p>
+  <p>Validation curves: <a href="{RAW_GH}/data/clean/ada_validation_curves.csv">ada_validation_curves.csv</a> &middot;
+  chosen settings: <a href="{RAW_GH}/data/clean/ada_chosen_settings.csv">ada_chosen_settings.csv</a> &middot;
+  every stump and its alpha: <a href="{RAW_GH}/data/clean/ada_stumps.csv">ada_stumps.csv</a> &middot;
+  test metrics: <a href="{RAW_GH}/data/clean/ada_results.csv">ada_results.csv</a></p>
+  <p>Code: <a href="{BLOB}/code/adaboost_analysis.py">adaboost_analysis.py</a>
+  &middot; <a href="{BLOB}/notebooks/adaboost.ipynb">adaboost.ipynb</a></p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is Python, in
+<a href="{BLOB}/code/adaboost_analysis.py">adaboost_analysis.py</a>, using
+scikit-learn's <code>AdaBoostClassifier</code> with a
+<code>DecisionTreeClassifier(max_depth=1)</code>, a stump, as the weak learner.
+Balanced starting weights are passed through <code>sample_weight</code>. Rather
+than refitting for every number of rounds, each configuration is fitted once
+with 400 rounds and <code>staged_decision_function</code> reads off the
+ensemble's validation score after every round, which produces the complete
+"performance as rounds are added" curve from a single fit. The Part 3 tree is
+refitted on the same split with its original settings, and the script confirms
+that it reproduces its published result before the two are compared.</p>
+
+<h2>Results</h2>
+
+<h3>Tuning on the validation set</h3>
+
+<p>Three settings were tuned on the validation set: the <b>number of
+rounds</b> (1 to 400), the <b>learning rate</b> (0.1, 0.25, 0.5, 1.0) and the
+<b>starting weights</b> (balanced or uniform). The selection measure was
+validation <b>average precision</b>, the area under the precision&ndash;recall
+curve, which rewards a model for ranking crashes above non-crashes regardless
+of where the cut-off is drawn. Accuracy is shown alongside, as the rubric asks,
+but it cannot be the selection measure here: on a 4.7% class, the most accurate
+model is one that never predicts a crash.</p>
+
+{figure("ada_fig_validation_curves.png",
+        "Validation accuracy and average precision as rounds are added",
+        "With balanced starting weights, validation accuracy at the default cut-off "
+        "falls from 94% to about 78% as rounds accumulate, because each round "
+        "flags more complaints as crashes; with uniform weights it sits flat near "
+        "95.6%. Average precision tells the real story: it doubles from 0.15 after "
+        "one stump to 0.33, with most of the gain inside the first 100 rounds at "
+        "the higher learning rates.")}
+
+{figure("ada_fig_tuning_grid.png",
+        "Validation average precision across learning rate and rounds",
+        "A higher learning rate reaches its plateau sooner, while 0.1 is still "
+        "climbing after 400 rounds. The plateau itself is nearly identical for "
+        "rates of 0.5 and 1.0, near 0.33.")}
+
+<p>The best validation average precision, 0.331, was reached at learning rate
+1.0 after 134 rounds. Among settings within 0.001 of that peak, the one with
+the fewest rounds was taken: <b>balanced starting weights, learning rate 1.0,
+126 stumps</b>. Balanced and uniform starting weights reached the same peak;
+balanced simply gets there with a useful model from the very first round.</p>
+
+<p>The curves exposed one more setting worth tuning. At the default cut-off
+of zero, the chosen model flags too many complaints: validation F1 is only
+0.220. The <b>cut-off on the weighted vote</b> was therefore chosen on the same
+validation set as the value that maximises F1 on the Crash class.</p>
+
+{figure("ada_fig_threshold.png",
+        "Choosing the decision cut-off on validation data",
+        "Raising the cut-off trades recall for precision. F1 peaks at 0.362 when a "
+        "complaint is called a crash only if its weighted vote exceeds 0.386, well "
+        "above the default of zero.")}
+
+<h3>The held-out test, against the Part 3 decision tree</h3>
+
+<p>With every setting fixed, the model was refitted on all 60,461 training
+complaints and scored once on the test set.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model, same 20,154 test complaints</th><th>Accuracy</th><th>Precision (Crash)</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td><b>AdaBoost: 126 stumps, learning rate 1.0, tuned cut-off</b></td><td><b>94.81%</b></td><td><b>0.428</b></td><td>0.294</td><td><b>0.349</b></td></tr>
+    <tr><td>Part 3 decision tree (Gini, depth 3)</td><td>88.22%</td><td>0.199</td><td><b>0.495</b></td><td>0.284</td></tr>
+    <tr><td>A single stump on its own</td><td>94.48%</td><td>0.390</td><td>0.300</td><td>0.339</td></tr>
+    <tr><td>AdaBoost at the default cut-off of 0</td><td>78.34%</td><td>0.135</td><td>0.664</td><td>0.224</td></tr>
+    <tr><td>Majority-class baseline</td><td>95.28%</td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
+</div>
+
+{figure("ada_fig_confusion.png",
+        "Confusion matrix, AdaBoost",
+        "Of 951 crash complaints in the test set, 280 are found and 671 are missed, "
+        "while 374 of the 19,203 non-crash complaints are wrongly flagged. The "
+        "model catches fewer crashes than the Part 3 tree but raises far fewer "
+        "false alarms.")}
+
+{figure("ada_fig_vs_tree.png",
+        "AdaBoost against the Part 3 decision tree",
+        "AdaBoost wins on accuracy, precision and F1, while the tree wins on "
+        "recall. A single stump comes surprisingly close to the full ensemble.")}
+
+<p><b>AdaBoost beats the Part 3 decision tree.</b> F1 on the crash class rises
+from 0.284 to 0.349, a gain of 0.065 or about 23%. Accuracy rises from 88.22% to
+94.81%, 6.6 points higher, and precision more than doubles, from 0.199 to 0.428:
+of the complaints AdaBoost flags, 43% genuinely involve a crash, against 20% for
+the tree. The tree still finds more crashes, 50% against 29%, because its
+reweighted classes push it to flag 2,364 complaints where AdaBoost flags 654.
+Neither model clears the 95.28% majority-class baseline on accuracy, which is a
+reminder of how little the vehicle's own attributes reveal about any single
+incident.</p>
+
+<p>The most telling row is the single stump. One question &mdash; is this
+complaint about airbags? &mdash; reaches an F1 of 0.339, within 0.01 of the
+126-stump ensemble. Boosting does improve the model's ability to rank
+complaints by risk, doubling validation average precision from 0.15 to 0.33,
+but at the chosen cut-off almost all the usable signal was already in the first
+split. The last row shows why the cut-off had to be tuned: with balanced
+weights and the default cut-off, the same 126 stumps flag nearly a quarter of
+all complaints and fall to an F1 of 0.224.</p>
+
+{figure("ada_fig_stump_weights.png",
+        "What the 126 stumps learned",
+        "Early stumps earn the largest alpha and later ones refine with ever smaller "
+        "weights. Grouped by the feature each stump splits on, airbag complaints "
+        "carry over a fifth of the total vote, followed by visibility and wiper, "
+        "speed control, fuel system and brakes.")}
+
+<h2>Conclusions</h2>
+
+<p>Boosting extracted more from the vehicle's attributes than a single tree
+could, but not much more than one well-chosen question. That is the most useful
+thing this tab says about vehicle safety. Whether an owner's problem ended in a
+crash depends overwhelmingly on which part of the vehicle failed, and above all
+on whether it was the airbags &mdash; a part that is often complained about
+precisely because it was called on in a collision. Once that question has been
+asked, the vehicle's age, its crash-test rating, its rollover probability and
+its standard equipment add only small refinements.</p>
+
+<p>The stumps also show which attributes carry the remaining signal, and the
+crash-test rating is not among the leaders. Visibility and wiper faults, speed
+control, fuel systems and brakes come next, followed by the vehicle's age and
+rollover probability. These are the parts whose failure plausibly leads to a
+collision: a driver who cannot see, cannot control speed, or cannot stop. The
+overall star rating, the number on the window sticker, earned less than 1% of
+the total vote.</p>
+
+<p>The practical comparison with the Part 3 tree is about false alarms. The
+tree caught half of all crashes but was wrong four times for every crash it
+found; AdaBoost catches fewer, but more than two in five of the complaints it
+flags genuinely involve a crash. For anyone triaging a large volume of reports
+with limited time, that is the more useful tool. For anyone who must not miss
+a crash, neither model built on vehicle attributes is good enough, and the
+narrative-based classifier on the Regression tab, which finds two crashes in
+three with five in six of its flags correct, is the better choice by a wide
+margin.</p>
 """
 
 CONCLUSIONS = """<h2>Conclusions</h2>
@@ -1687,27 +2393,17 @@ PAGES = {
     "dectrees.html": ("DecTrees",
                       "Three decision trees predicting crashes from vehicle "
                       "attributes, with Gini, entropy and information gain.", DT_TAB),
-    "svms.html": ("SVMs", "Support vector machines.",
-        stub("Support Vector Machines", 4,
-             "Testing whether a margin-based classifier separates safety outcomes "
-             "more cleanly.",
-             "Support vector machines will be applied with several kernels, linear "
-             "and non-linear, and compared against one another and against the "
-             "earlier classifiers using consistent accuracy measures.")),
-    "regression.html": ("Regression", "Linear regression.",
-        stub("Regression", 5,
-             "Predicting continuous safety measures, such as complaint rate and "
-             "rollover probability.",
-             "Linear regression will model continuous outcomes from vehicle "
-             "characteristics and equipment, with residuals examined to check whether "
-             "the relationships found during exploration hold under a fitted model.")),
-    "nn.html": ("NN", "Neural networks.",
-        stub("Neural Networks", 5,
-             "Testing whether a flexible model finds structure the simpler methods "
-             "miss.",
-             "A neural network will be trained on the same prediction tasks used "
-             "earlier, and its accuracy compared against the simpler models to judge "
-             "whether the additional complexity is justified.")),
+    "regression.html": ("Regression",
+                        "Linear regression of vehicle crash rates and logistic "
+                        "regression of 83,282 complaint narratives, compared with "
+                        "Naive Bayes.", REG_TAB),
+    "adaboost.html": ("AdaBoost",
+                      "AdaBoost with decision stumps predicting crashes from vehicle "
+                      "attributes, tuned on validation data and compared with the "
+                      "Part 3 decision tree.", ADA_TAB),
+    "gradientboosting.html": ("GradientBoosting", "Gradient boosting.",
+                              empty_tab("Gradient Boosting")),
+    "xgboost.html": ("XGBoost", "XGBoost.", empty_tab("XGBoost")),
     "conclusions.html": ("Conclusions", "What the project found.", CONCLUSIONS),
     "about.html": ("About Me", "About the author of this project.", ABOUT),
 }

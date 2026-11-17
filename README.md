@@ -54,28 +54,46 @@ Coverage: 39 vehicle models across 16 makes, model years 2016–2024.
 
 ```
 code/
-  fetch_data.py       gather from 3 APIs + 1 bulk download (cached, resumable)
-  clean_data.py       clean, repair, derive, join -> data/clean/
-  eda_visualize.py    20 figures -> figures/
-  build_site.py       generate the 11-tab website
+  fetch_data.py               gather from 3 APIs + 1 bulk download (cached, resumable)
+  clean_data.py               clean, repair, derive, join -> data/clean/
+  eda_visualize.py            EDA figures and raw/clean snapshots -> figures/
+  clustering_analysis.py      k-means and cosine hierarchical clustering
+  pca_analysis.py             principal component analysis
+  sample_snapshots.py         data-prep images for clustering and PCA
+  naive_bayes_analysis.py     Multinomial and Bernoulli Naive Bayes
+  decision_tree_analysis.py   three decision trees
+  regression_analysis.py      linear and logistic regression
+  adaboost_analysis.py        AdaBoost with decision stumps
+  build_site.py               generate the website
+notebooks/                    one annotated notebook per method, with outputs
 data/
-  raw/                gathered data, gzipped, exactly as received
-  clean/              cleaned tables + cleaning_report.txt
-figures/              EDA figures and raw/clean data snapshots
-assets/               stylesheet and images
-*.html                the website
+  raw/                        gathered data, gzipped, exactly as received
+  clean/                      cleaned tables, model inputs, samples and results
+figures/                      every figure on the site
+assets/                       stylesheet and images
+*.html                        the website
 ```
 
 ## Reproducing
 
 ```bash
+pip install -r requirements.txt
 py code/fetch_data.py       # ~10 min cold; instant from cache
 py code/clean_data.py
 py code/eda_visualize.py
+py code/clustering_analysis.py
+py code/pca_analysis.py
+py code/sample_snapshots.py
+py code/naive_bayes_analysis.py
+py code/decision_tree_analysis.py
+py code/regression_analysis.py
+py code/adaboost_analysis.py
 py code/build_site.py
 ```
 
-Requires `pandas`, `numpy`, `matplotlib`, `requests`.
+Every analysis uses the fixed seed 5612. Supervised settings are chosen on
+validation data or by cross-validation inside the training set; each test set
+is used once, to score the final model.
 
 API responses are cached under `data/raw/cache/` (gitignored, ~86 MB) so the
 gathering step is resumable and does not repeatedly load the public service.
@@ -94,7 +112,6 @@ stored in this repository.
 | Module | Deliverable | Status |
 |---|---|---|
 | 1 | Topic, data gathering, cleaning, EDA | Complete |
-| 2 | Clustering and PCA | Pending |
-| 3 | Naive Bayes and Decision Trees | Pending |
-| 4 | Support Vector Machines | Pending |
-| 5 | Regression, Neural Networks, final write-up | Pending |
+| 2 | Clustering and PCA | Complete |
+| 3 | Naive Bayes and Decision Trees | Complete |
+| 4 | Regression (linear and logistic) and AdaBoost | Complete |

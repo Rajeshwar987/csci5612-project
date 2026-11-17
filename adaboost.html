@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AdaBoost | Vehicle Safety Project</title>
+<meta name="description" content="AdaBoost with decision stumps predicting crashes from vehicle attributes, tuned on validation data and compared with the Part 3 decision tree.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="course">Rajeshwar Rengeswaran, CSCI 5612 Machine Learning</p>
+    <h1>Rated Safe, Reported Broken</h1>
+    <p class="byline">What crash-test scores miss about how vehicles actually fail</p>
+  </div>
+</header>
+<nav class="tabs" aria-label="Project sections">
+  <div class="wrap">
+      <a href="index.html">Introduction</a>
+      <a href="dataprep_eda.html">DataPrep_EDA</a>
+      <a href="clustering.html">Clustering</a>
+      <a href="pca.html">PCA</a>
+      <a href="naivebayes.html">NaiveBayes</a>
+      <a href="dectrees.html">DecTrees</a>
+      <a href="regression.html">Regression</a>
+      <a href="adaboost.html" class="active">AdaBoost</a>
+      <a href="gradientboosting.html">GradientBoosting</a>
+      <a href="xgboost.html">XGBoost</a>
+      <a href="conclusions.html">Conclusions</a>
+      <a href="about.html">About Me</a>
+  </div>
+</nav>
+<main>
+<h2>AdaBoost</h2>
+
+<p class="lede">The Decision Trees tab built single trees to predict crashes
+from a vehicle's attributes and found only a weak signal. This tab asks whether
+hundreds of deliberately tiny trees, each correcting the last, can extract more
+from exactly the same data.</p>
+
+<h2>Overview</h2>
+
+<p><b>Boosting</b> builds a strong model out of many weak ones by training them
+one after another, with each new model concentrating on the cases the earlier
+ones got wrong. It is easiest to understand by contrast with <b>bagging</b>, the
+idea behind random forests. Bagging draws many random samples of the training
+data, grows a full, independent tree on each, and lets them vote with equal
+weight; because the trees are built separately they can be built at the same
+time, and averaging them mainly reduces variance. Boosting is sequential: tree
+two cannot be built until tree one exists, because tree two is trained on data
+reweighted by tree one's mistakes. Each model is weak on its own, and boosting
+mainly reduces bias by adding them up.</p>
+
+<figure>
+  <img src="figures/ada_concept_bagging_vs_boosting.png" alt="Bagging and boosting compared">
+  <figcaption><b>Bagging and boosting compared.</b> Bagging trains full trees independently on random samples and gives each an equal vote. Boosting trains small trees one after another on reweighted data, and each tree's vote is weighted by how accurate it was.</figcaption>
+</figure>
+
+<p><b>AdaBoost</b> (adaptive boosting) is the original boosting algorithm, and
+here its weak learners are <b>decision stumps</b>: trees with a single split,
+one question with two answers, such as "is the complaint about airbags?". A
+stump on its own is barely better than guessing, which is the point. Training
+proceeds in rounds:</p>
+<ul>
+  <li><b>Start</b> with a weight on every training row. Here the weights are
+      balanced so that the 4.7% of crash rows carry half the total weight,
+      the same correction the Part 3 tree used.</li>
+  <li><b>Fit a stump</b> that minimises the <i>weighted</i> error, so rows with
+      large weights count for more.</li>
+  <li><b>Score the stump.</b> Its weight in the final vote is
+      &alpha;<sub>m</sub> = learning rate &times; ln((1 &minus; error) / error).
+      A stump with low weighted error earns a large &alpha;; a stump no better
+      than a coin flip, at error 0.5, earns &alpha; = 0 and is ignored; a stump
+      worse than chance gets a negative &alpha;, so its vote is reversed.</li>
+  <li><b>Reweight the rows.</b> Every row the stump got wrong has its weight
+      multiplied by <i>e</i><sup>&alpha;</sup>, then all weights are rescaled to
+      sum to one. Misclassified rows therefore grow, and the next stump is
+      forced to pay attention to them.</li>
+  <li><b>Repeat</b> for the chosen number of rounds.</li>
+</ul>
+
+<figure>
+  <img src="figures/ada_concept_reweighting.png" alt="Three real rounds of AdaBoost on a small example">
+  <figcaption><b>Three real rounds of AdaBoost on a small example.</b> Marker size shows each row's weight. The rows circled as mistakes in one round grow before the next, so each new stump places its split where the previous ones failed, and three weak stumps together classify 90% of the points correctly.</figcaption>
+</figure>
+
+<p>The <b>final prediction is a weighted vote</b>: every stump votes +1 for
+Crash or &minus;1 for No crash, each vote is multiplied by that stump's
+&alpha;, and the votes are summed. A positive total means Crash. Accurate
+stumps therefore have a larger say than marginal ones. The total can also be
+compared against a cut-off other than zero, which turns out to matter on this
+data. The <b>learning rate</b> scales every &alpha; down: a smaller rate means
+each stump changes the ensemble less, so more rounds are needed, but the result
+is usually smoother.</p>
+
+<figure>
+  <img src="figures/ada_concept_alpha.png" alt="How a stump's error becomes its say in the vote">
+  <figcaption><b>How a stump's error becomes its say in the vote.</b> Alpha is large when the weighted error is small, zero at an error of 0.5, and negative beyond it. This single curve is what lets AdaBoost combine learners of very different quality without any of them being chosen by hand.</figcaption>
+</figure>
+
+<p><b>How it is used here.</b> The task, the 29 features and the train/test
+split are identical to the Decision Trees tab: predict whether a complaint
+involved a crash from the vehicle's age, rating, rollover probability,
+equipment, recall count, body segment and the component involved, without
+reading the narrative. Keeping everything identical means any difference from
+the Part 3 tree is due to boosting alone.</p>
+
+<h2>Data Prep</h2>
+
+<p>AdaBoost is supervised, so it needs <b>labelled data</b>; the label is the
+crash field on the federal complaint form, exactly as before. Joining each
+complaint to its rated vehicle leaves <b>80,615 labelled complaints</b>.</p>
+
+<p>scikit-learn's AdaBoost, like its trees, accepts <b>only numeric input</b>.
+Two of the eleven raw columns are text: the body segment (SUV, Sedan, Truck and
+so on) and the component the complaint concerns. Both were converted with
+<b>one-hot encoding</b>, which replaces one text column with one 0/1 column per
+category: a Sedan complaint gets a 1 in <code>seg_Sedan</code> and 0 in every
+other segment column. The component field has 41 categories, so the twelve
+most common were kept and the rest grouped as <code>cmp_OTHER</code> to stop
+the encoding from exploding. Nine numeric columns, seven segment columns and
+thirteen component columns make <b>29 numeric features</b>. The two images
+below show the step itself.</p>
+
+<figure>
+  <img src="figures/ada_sample_before.png" alt="BEFORE encoding: two columns are still text">
+  <figcaption><b>BEFORE encoding: two columns are still text.</b> The segment and component columns hold words, which AdaBoost cannot split on. Everything else is already numeric.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/ada_sample_encoded.png" alt="AFTER one-hot encoding: every category is its own 0/1 column">
+  <figcaption><b>AFTER one-hot encoding: every category is its own 0/1 column.</b> Each complaint now has a 1 in exactly one segment column and one component column, with zeros in the rest. A subset of the 29 columns is shown, with the label still in the final column.</figcaption>
+</figure>
+
+<p>The train/test split is the Decision Trees split reproduced exactly:
+<b>75/25, stratified on the label, same seed</b>, giving 60,461 training and
+20,154 testing complaints, each with the same 4.72% crash rate. The code
+asserts that the sets share no rows and that the test set matches the Part 3
+test set row for row. The two must be disjoint because a boosted model, given
+enough rounds, can fit its training rows almost perfectly; scoring it on those
+same rows would report a skill it does not have.</p>
+
+<p>One more split was needed. AdaBoost has settings to choose, and choosing
+them on the test set would quietly turn the test set into training data. So
+<b>20% of the training set was held back as a validation set</b>, stratified
+the same way: the model was tuned by training on 48,368 rows and checking on
+12,093, and the test set was used once, after every choice was fixed.</p>
+
+<figure>
+  <img src="figures/ada_sample_train.png" alt="The AdaBoost training set">
+  <figcaption><b>The AdaBoost training set.</b> 60,461 complaints. During tuning, 12,093 of these were held out as the validation set; the final model was then refitted on all of them.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/ada_sample_test.png" alt="The AdaBoost testing set">
+  <figcaption><b>The AdaBoost testing set.</b> 20,154 complaints, identical to the Part 3 decision tree's test set. None of them played any part in training, tuning or choosing the cut-off.</figcaption>
+</figure>
+
+<div class="callout">
+  <p><b>Data and code.</b>
+  Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a> &middot;
+  Cleaned source tables:
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a>,
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a></p>
+  <p>Labelled data before encoding:
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_labeled_before_encoding.csv">ada_labeled_before_encoding.csv</a> &middot;
+  after encoding: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_labeled_encoded.csv">ada_labeled_encoded.csv</a> &middot;
+  training sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_train_sample.csv">ada_train_sample.csv</a> &middot;
+  testing sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_test_sample.csv">ada_test_sample.csv</a></p>
+  <p>Validation curves: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_validation_curves.csv">ada_validation_curves.csv</a> &middot;
+  chosen settings: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_chosen_settings.csv">ada_chosen_settings.csv</a> &middot;
+  every stump and its alpha: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_stumps.csv">ada_stumps.csv</a> &middot;
+  test metrics: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/ada_results.csv">ada_results.csv</a></p>
+  <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/adaboost_analysis.py">adaboost_analysis.py</a>
+  &middot; <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/adaboost.ipynb">adaboost.ipynb</a></p>
+</div>
+
+<h2>Code</h2>
+
+<p>The analysis is Python, in
+<a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/adaboost_analysis.py">adaboost_analysis.py</a>, using
+scikit-learn's <code>AdaBoostClassifier</code> with a
+<code>DecisionTreeClassifier(max_depth=1)</code>, a stump, as the weak learner.
+Balanced starting weights are passed through <code>sample_weight</code>. Rather
+than refitting for every number of rounds, each configuration is fitted once
+with 400 rounds and <code>staged_decision_function</code> reads off the
+ensemble's validation score after every round, which produces the complete
+"performance as rounds are added" curve from a single fit. The Part 3 tree is
+refitted on the same split with its original settings, and the script confirms
+that it reproduces its published result before the two are compared.</p>
+
+<h2>Results</h2>
+
+<h3>Tuning on the validation set</h3>
+
+<p>Three settings were tuned on the validation set: the <b>number of
+rounds</b> (1 to 400), the <b>learning rate</b> (0.1, 0.25, 0.5, 1.0) and the
+<b>starting weights</b> (balanced or uniform). The selection measure was
+validation <b>average precision</b>, the area under the precision&ndash;recall
+curve, which rewards a model for ranking crashes above non-crashes regardless
+of where the cut-off is drawn. Accuracy is shown alongside, as the rubric asks,
+but it cannot be the selection measure here: on a 4.7% class, the most accurate
+model is one that never predicts a crash.</p>
+
+<figure>
+  <img src="figures/ada_fig_validation_curves.png" alt="Validation accuracy and average precision as rounds are added">
+  <figcaption><b>Validation accuracy and average precision as rounds are added.</b> With balanced starting weights, validation accuracy at the default cut-off falls from 94% to about 78% as rounds accumulate, because each round flags more complaints as crashes; with uniform weights it sits flat near 95.6%. Average precision tells the real story: it doubles from 0.15 after one stump to 0.33, with most of the gain inside the first 100 rounds at the higher learning rates.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/ada_fig_tuning_grid.png" alt="Validation average precision across learning rate and rounds">
+  <figcaption><b>Validation average precision across learning rate and rounds.</b> A higher learning rate reaches its plateau sooner, while 0.1 is still climbing after 400 rounds. The plateau itself is nearly identical for rates of 0.5 and 1.0, near 0.33.</figcaption>
+</figure>
+
+<p>The best validation average precision, 0.331, was reached at learning rate
+1.0 after 134 rounds. Among settings within 0.001 of that peak, the one with
+the fewest rounds was taken: <b>balanced starting weights, learning rate 1.0,
+126 stumps</b>. Balanced and uniform starting weights reached the same peak;
+balanced simply gets there with a useful model from the very first round.</p>
+
+<p>The curves exposed one more setting worth tuning. At the default cut-off
+of zero, the chosen model flags too many complaints: validation F1 is only
+0.220. The <b>cut-off on the weighted vote</b> was therefore chosen on the same
+validation set as the value that maximises F1 on the Crash class.</p>
+
+<figure>
+  <img src="figures/ada_fig_threshold.png" alt="Choosing the decision cut-off on validation data">
+  <figcaption><b>Choosing the decision cut-off on validation data.</b> Raising the cut-off trades recall for precision. F1 peaks at 0.362 when a complaint is called a crash only if its weighted vote exceeds 0.386, well above the default of zero.</figcaption>
+</figure>
+
+<h3>The held-out test, against the Part 3 decision tree</h3>
+
+<p>With every setting fixed, the model was refitted on all 60,461 training
+complaints and scored once on the test set.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model, same 20,154 test complaints</th><th>Accuracy</th><th>Precision (Crash)</th><th>Recall (Crash)</th><th>F1 (Crash)</th></tr></thead>
+  <tbody>
+    <tr><td><b>AdaBoost: 126 stumps, learning rate 1.0, tuned cut-off</b></td><td><b>94.81%</b></td><td><b>0.428</b></td><td>0.294</td><td><b>0.349</b></td></tr>
+    <tr><td>Part 3 decision tree (Gini, depth 3)</td><td>88.22%</td><td>0.199</td><td><b>0.495</b></td><td>0.284</td></tr>
+    <tr><td>A single stump on its own</td><td>94.48%</td><td>0.390</td><td>0.300</td><td>0.339</td></tr>
+    <tr><td>AdaBoost at the default cut-off of 0</td><td>78.34%</td><td>0.135</td><td>0.664</td><td>0.224</td></tr>
+    <tr><td>Majority-class baseline</td><td>95.28%</td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+  </tbody>
+</table>
+</div>
+
+<figure>
+  <img src="figures/ada_fig_confusion.png" alt="Confusion matrix, AdaBoost">
+  <figcaption><b>Confusion matrix, AdaBoost.</b> Of 951 crash complaints in the test set, 280 are found and 671 are missed, while 374 of the 19,203 non-crash complaints are wrongly flagged. The model catches fewer crashes than the Part 3 tree but raises far fewer false alarms.</figcaption>
+</figure>
+
+<figure>
+  <img src="figures/ada_fig_vs_tree.png" alt="AdaBoost against the Part 3 decision tree">
+  <figcaption><b>AdaBoost against the Part 3 decision tree.</b> AdaBoost wins on accuracy, precision and F1, while the tree wins on recall. A single stump comes surprisingly close to the full ensemble.</figcaption>
+</figure>
+
+<p><b>AdaBoost beats the Part 3 decision tree.</b> F1 on the crash class rises
+from 0.284 to 0.349, a gain of 0.065 or about 23%. Accuracy rises from 88.22% to
+94.81%, 6.6 points higher, and precision more than doubles, from 0.199 to 0.428:
+of the complaints AdaBoost flags, 43% genuinely involve a crash, against 20% for
+the tree. The tree still finds more crashes, 50% against 29%, because its
+reweighted classes push it to flag 2,364 complaints where AdaBoost flags 654.
+Neither model clears the 95.28% majority-class baseline on accuracy, which is a
+reminder of how little the vehicle's own attributes reveal about any single
+incident.</p>
+
+<p>The most telling row is the single stump. One question &mdash; is this
+complaint about airbags? &mdash; reaches an F1 of 0.339, within 0.01 of the
+126-stump ensemble. Boosting does improve the model's ability to rank
+complaints by risk, doubling validation average precision from 0.15 to 0.33,
+but at the chosen cut-off almost all the usable signal was already in the first
+split. The last row shows why the cut-off had to be tuned: with balanced
+weights and the default cut-off, the same 126 stumps flag nearly a quarter of
+all complaints and fall to an F1 of 0.224.</p>
+
+<figure>
+  <img src="figures/ada_fig_stump_weights.png" alt="What the 126 stumps learned">
+  <figcaption><b>What the 126 stumps learned.</b> Early stumps earn the largest alpha and later ones refine with ever smaller weights. Grouped by the feature each stump splits on, airbag complaints carry over a fifth of the total vote, followed by visibility and wiper, speed control, fuel system and brakes.</figcaption>
+</figure>
+
+<h2>Conclusions</h2>
+
+<p>Boosting extracted more from the vehicle's attributes than a single tree
+could, but not much more than one well-chosen question. That is the most useful
+thing this tab says about vehicle safety. Whether an owner's problem ended in a
+crash depends overwhelmingly on which part of the vehicle failed, and above all
+on whether it was the airbags &mdash; a part that is often complained about
+precisely because it was called on in a collision. Once that question has been
+asked, the vehicle's age, its crash-test rating, its rollover probability and
+its standard equipment add only small refinements.</p>
+
+<p>The stumps also show which attributes carry the remaining signal, and the
+crash-test rating is not among the leaders. Visibility and wiper faults, speed
+control, fuel systems and brakes come next, followed by the vehicle's age and
+rollover probability. These are the parts whose failure plausibly leads to a
+collision: a driver who cannot see, cannot control speed, or cannot stop. The
+overall star rating, the number on the window sticker, earned less than 1% of
+the total vote.</p>
+
+<p>The practical comparison with the Part 3 tree is about false alarms. The
+tree caught half of all crashes but was wrong four times for every crash it
+found; AdaBoost catches fewer, but more than two in five of the complaints it
+flags genuinely involve a crash. For anyone triaging a large volume of reports
+with limited time, that is the more useful tool. For anyone who must not miss
+a crash, neither model built on vehicle attributes is good enough, and the
+narrative-based classifier on the Regression tab, which finds two crashes in
+three with five in six of its flags correct, is the better choice by a wide
+margin.</p>
+</main>
+<footer><div class="wrap">
+  <p>Rajeshwar Rengeswaran, CSCI 5612 Machine Learning project.</p>
+  <p>Data published by the <a href="https://www.nhtsa.gov/">U.S. National Highway
+  Traffic Safety Administration</a>. All code and data for this project are public at
+  <a href="https://github.com/Rajeshwar987/csci5612-project">github.com/Rajeshwar987/csci5612-project</a>.</p>
+</div></footer>
+</body>
+</html>

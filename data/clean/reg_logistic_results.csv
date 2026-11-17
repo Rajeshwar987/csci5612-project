@@ -1,0 +1,5 @@
+model,accuracy,precision_crash,recall_crash,f1_crash
+"Logistic regression (C=1, class weight none)",0.9784,0.8303,0.6839,0.75
+Multinomial NB,0.9441,0.4515,0.8298,0.5848
+Bernoulli NB,0.9517,0.4941,0.8055,0.6125
+Majority-class baseline,0.9526,0.0,0.0,0.0

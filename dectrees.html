@@ -26,9 +26,10 @@
       <a href="pca.html">PCA</a>
       <a href="naivebayes.html">NaiveBayes</a>
       <a href="dectrees.html" class="active">DecTrees</a>
-      <a href="svms.html">SVMs</a>
       <a href="regression.html">Regression</a>
-      <a href="nn.html">NN</a>
+      <a href="adaboost.html">AdaBoost</a>
+      <a href="gradientboosting.html">GradientBoosting</a>
+      <a href="xgboost.html">XGBoost</a>
       <a href="conclusions.html">Conclusions</a>
       <a href="about.html">About Me</a>
   </div>
@@ -182,6 +183,10 @@ sweep below shows exactly that happening.</p>
   Testing sample: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_test_sample.csv">dt_test_sample.csv</a> &middot;
   Worked split example: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_information_gain.csv">dt_information_gain.csv</a> &middot;
   Metrics: <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/dt_results.csv">dt_results.csv</a></p>
+  <p>Raw data: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/data/raw">data/raw/</a> (all four sources, exactly as
+  gathered) &middot; cleaned source tables:
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/complaints_clean.csv.gz">complaints_clean.csv.gz</a>,
+  <a href="https://github.com/Rajeshwar987/csci5612-project/raw/main/data/clean/vehicle_model_year.csv">vehicle_model_year.csv</a></p>
   <p>Code: <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/code/decision_tree_analysis.py">decision_tree_analysis.py</a>
   &middot; <a href="https://github.com/Rajeshwar987/csci5612-project/blob/main/notebooks/decision_trees.ipynb">decision_trees.ipynb</a></p>
 </div>
@@ -225,7 +230,7 @@ line by line.</p>
 
 <figure>
   <img src="figures/dt_fig_tree3.png" alt="Tree 3: Gini, depth 10, minimum 50 samples per leaf">
-  <figcaption><b>Tree 3: Gini, depth 10, minimum 50 samples per leaf.</b> Allowing ten levels produces 170 leaves and raises recall to 0.70, catching far more crashes, but accuracy collapses to 73% because it now flags enormous numbers of ordinary complaints.</figcaption>
+  <figcaption><b>Tree 3: Gini, depth 10, minimum 50 samples per leaf.</b> Allowing ten levels produces 170 leaves and raises recall to 0.70, catching far more crashes. Accuracy collapses to 73%, however, because the tree now flags enormous numbers of ordinary complaints.</figcaption>
 </figure>
 
 <figure>
